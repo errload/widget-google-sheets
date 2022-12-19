@@ -1,0 +1,11 @@
+{
+    "widget": {
+        "name": "Google sheets",
+        "short_description": "Google sheets",
+        "description": "Google sheets",
+        "tour_description": "Google sheets"
+    },
+    "settings": {
+        "config_settings": "Настройки"
+    }
+}

@@ -1,0 +1,7 @@
+<script>
+    function OnChange_WidgetGoogle() {
+        data = {};
+        $('#<?php echo $settings["widget_code"]; ?>_custom').val(JSON.stringify(data));
+        $('#<?php echo $settings["widget_code"]; ?>_custom').change();
+    }
+</script>

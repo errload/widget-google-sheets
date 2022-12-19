@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "amo-japan-366918",
+  "private_key_id": "90a20287d3af59bc29c531e1773a4b123a56e9b2",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCiElBMoLAqTCLR\nmSAO8Ea6mmjiEqK4XXCHudm8dwCcxsirOl7PQeOUQAm70EVCokrHbBZcxJNDmeXT\nJ8cYy2i2WSZ/oqvkF91CtUvXgptBbWFBhHx3/4Tu1DnUCXZgadydiHAvCYkcKE8O\nR+sdIwW7yzvfeM6bUKnuNlzDHxFwaRurHsyFbB4t/dQhE2YLCPwfePjv+7UOHddp\nKZzXHX0UKxfJ3wdIoonqIBWI9TuTnSaF+bDcJwSjrJnEFXfZOzCaQNov8Ke9D4jg\nbCm4m7jmpTmZPdugv19cqRU97tqLCtJIbBwh4pCtRY/wxcEklm+izIaykJERRkEJ\nwTrvGqOnAgMBAAECggEAA2FsaVzEr+0soMCX6ZfbcdL8sxJ+cGgKi9o1j3fP/HUt\nBF1QUvRl4dbAHTnH6A7ojmZTxRWYmMViBNiEj6DWi08qvWjQOw7AX77WWSVxRZkZ\neTthOUOMK0sj9adI39P1dRe+d0y0nnC8zWh0oAP1/6fKlOu5K4YwNTbPEobYX0bZ\nfAJ044ZWxY8A1d2t/WuXtmuqrwHKSMUGsOaKeQpecfXzfn2q2W02FZaHsGkctezx\nv2vmlqoTNJyS9HQldAqyovalJoKvYdeoWy0R5pRAm6B799woO+K5KVagSp61Ycaw\nLTSkUIloRYUIC8w1pN7g73/VHPJ8/6n08jlGw2T4AQKBgQDQNC98xRQuSaxNCUJp\nI22LmcTxBOkTvricb/N2EqPzZFy4CWZeTTBEUZfL4Dg/wgmPGtINR8MQchZ7vEol\ngR5/APuOq4jBSqSXeoiXxWRwi6IyqyOp+QBaB4SXIJc44brT6JhUy7UR/k3geZJL\nVxB4t3tQvyO8yKnMXQ8YwYyMAQKBgQDHRwEfEHP45musAo7oeTH7GcOOENAYH2VU\n1KZxwSItrLxPkE/1XxA7tUHSYNz7/7W8bgedG0nykSLW3LPuHmd5qwI7AhiEZ7xe\na81FPAktyRwyf/aYRZ+82NWIjkRXmTGqH0CsVgriszfQRSbUjBFUq+Ar4SWtHYwM\nhJP8OTdPpwKBgA6q7oGCvNY5+HqA4X3Yshn4nkhAiU8Ly6Oxu1whGg3Gj0Wj2+Ne\n2rylZuVFCZFsURIU2KF44cQh1XWoIS0dOJHH9vDpIrxDTu8hAch3bokDPU0Gg3+w\n/BZbmzquYBjwxiGxrDGlHD+FQ+VBi03ld1KZ0oUwwgrFtDiigbLDx+wBAoGBAK+f\nti9IcszjVfVMc+ISHahs9lmYG62GzelLWD1ctuCGIZgFWVKoq0fT4OSmFVvJ6sLc\nPb2KNUuf+ZJfA/xRs2QZAGg82pqmSe71Fv1zgatmWIFxIUTl53epqdclermw+4Iw\n9PBtDD7rL79Pkn8zynpS18gULv440hqeJUXerw51AoGAKpBKFSCXzO7DepiK1GPb\nsht+1wZFsDyqEaePB2CkrkVB3vJQhHpb1sgCIaZ+7PL8EuiHeCbZ63k0dcY8Hl5p\nI+ochNf4q1fmrEr9lC7DjeZb+1C3EvhWCOHzkJLSqfeaRtqyigwfbnxJCv29VJBK\nZHP4lRG587SEQ6GCBiCRySQ=\n-----END PRIVATE KEY-----\n",
+  "client_email": "amo-japan@amo-japan-366918.iam.gserviceaccount.com",
+  "client_id": "115344197528233011089",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/amo-japan%40amo-japan-366918.iam.gserviceaccount.com"
+}
