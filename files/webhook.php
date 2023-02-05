@@ -47,13 +47,23 @@
                 $value = mb_strtolower(trim(preg_replace('/\s+/', ' ', $value)));
 
                 // ID сделки и ссылка на сделку
-                if ($value === 'id сделки') $row['id сделки'] = $lead_ID;
+                if ($value === 'id сделки') {
+                    $row['id сделки'] = $lead_ID;
+                    $lead_key_ID = $key;
+                }
                 if ($value === 'ссылка на сделку') $row['ссылка на сделку'] = $lead_link;
 
                 // клиент всегда первый столбец
                 if ($key === 0) $selection_title[] = 'клиент';
                 else $selection_title[] = $value;
             }
+
+            // если такая сделка уже есть в таблице, новую не пишем
+            $is_lead = false;
+            foreach ($list['values'] as $key => $value) {
+                if ($value[$lead_key_ID] === $lead_ID) $is_lead = true;
+            }
+            if ($is_lead) return false;
 
             // поля из файла настроек виджета
             if (file_exists('selection.json')) {
