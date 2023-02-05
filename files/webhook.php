@@ -2,11 +2,11 @@
     // если виджет не установлен, выходим
     if (!file_exists('install.json')) return;
 
-    use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
+    use AmoCRM\Exceptions\AmoCRMApiException;
 
     include_once __DIR__ . '/../../api_google/vendor/autoload.php';
-    include_once 'config.php';
-    include 'google_config.php';
+//    include_once 'config.php';
+    include_once 'google_config.php';
 
     /* ###################################################################### */
 
@@ -30,7 +30,7 @@
         try {
             $lead_info = $apiClient->leads()->getOne((int) $lead_ID, ['contacts']);
             usleep(200);
-        } catch (AmoCRMException $e) {}
+        } catch (AmoCRMApiException $e) {}
 
         // если воронка и статус не соответствуют, пропускаем
         if ($lead_info->getPipelineId() !== $pipeline_ID) return;
@@ -79,7 +79,7 @@
                 try {
                     $contact = $apiClient->contacts()->getOne((int) $contact_ID);
                     usleep(200);
-                } catch (AmoCRMException $e) {}
+                } catch (AmoCRMApiException $e) {}
 
                 // поля контакта
                 $customFields = $contact->getCustomFieldsValues();
@@ -136,7 +136,7 @@
             try {
                 $manager = $apiClient->users()->getOne((int) $manager_ID)->getName();
                 usleep(200);
-            } catch (AmoCRMException $e) {}
+            } catch (AmoCRMApiException $e) {}
             $row['менеджер'] = $manager;
 
             // поля сделки

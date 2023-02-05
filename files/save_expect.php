@@ -3,14 +3,14 @@
     use AmoCRM\Models\CustomFieldsValues\ValueCollections\MultitextCustomFieldValueCollection;
     use AmoCRM\Models\CustomFieldsValues\ValueModels\BaseEnumCodeCustomFieldValueModel;
     use AmoCRM\Helpers\EntityTypesInterface;
-    use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
+    use AmoCRM\Exceptions\AmoCRMApiException;
     use AmoCRM\Models\CustomFieldsValues\ValueCollections\NullCustomFieldValueCollection;
     use AmoCRM\Collections\CustomFieldsValuesCollection;
     use AmoCRM\Filters\LeadsFilter;
 
     include_once __DIR__ . '/../../api_google/vendor/autoload.php';
-    include_once 'config.php';
-    include 'google_config.php';
+//    include_once 'config.php';
+    include_once 'google_config.php';
 
     /* ###################################################################### */
 
@@ -52,7 +52,7 @@
         try {
             $leads_IDs = $apiClient->leads()->get((new LeadsFilter())->setIds($IDs));
             usleep(200);
-        } catch (AmoCRMException $e) {}
+        } catch (AmoCRMApiException $e) {}
         $IDs = [];
         foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
 
@@ -95,7 +95,7 @@
         try {
             $customFields = $customFieldsLeads->get();
             usleep(200);
-        } catch (AmoCRMException $e) {}
+        } catch (AmoCRMApiException $e) {}
 
         if ($customFields->count() > 0) $fields_count = true;
         while ($fields_count) {
@@ -110,7 +110,7 @@
                     $customFields = $customFieldsLeads->nextPage($customFields);
                     usleep(200);
                     $fields_count = true;
-                } catch (AmoCRMException $e) {}
+                } catch (AmoCRMApiException $e) {}
             } else $fields_count = false;
         }
 
@@ -119,7 +119,7 @@
         try {
             $customFields = $customFieldsContacts->get();
             usleep(200);
-        } catch (AmoCRMException $e) {}
+        } catch (AmoCRMApiException $e) {}
 
         foreach ($customFields as $customField) {
             $class = explode('\\', get_class($customField));
@@ -136,7 +136,7 @@
             try {
                 $lead_info = $apiClient->leads()->getOne((int) $ID, ['contacts']);
                 usleep(200);
-            } catch (AmoCRMException $e) {}
+            } catch (AmoCRMApiException $e) {}
 
             // коллекция полей сделки
             $customFields = null;
@@ -162,7 +162,7 @@
                 $apiClient->leads()->updateOne($lead_info);
                 usleep(200);
                 $leads_edit[] = $ID;
-            } catch (AmoCRMException $e) {}
+            } catch (AmoCRMApiException $e) {}
 
             // меняем контакт
             $contacts = $lead_info->getContacts();
@@ -172,7 +172,7 @@
                 try {
                     $contact = $apiClient->contacts()->getOne((int) $contact_ID);
                     usleep(200);
-                } catch (AmoCRMException $e) {}
+                } catch (AmoCRMApiException $e) {}
 
                 // коллекция полей контакта
                 $customFields = null;
@@ -209,28 +209,38 @@
                 try {
                     $apiClient->contacts()->updateOne($contact);
                     usleep(200);
-                } catch (AmoCRMException $e) {}
+                } catch (AmoCRMApiException $e) {}
             }
         }
+
+        // алфавит таблицы для подстановки столбца
+        $google_AZ = [
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+            'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+            'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG'
+        ];
 
         // обновляем строки на значение с цифрой 2
         $result = [];
         foreach ($list['values'] as $key => $row) {
             // если не первая строка и смена статуса с цифрой 1, меняем на 2, иначе просто перезаписываем
             if ($key !== 0 &&
-                (int) $row[$expect_number_key] === 1 &&
+                (int)$row[$expect_number_key] === 1 &&
                 // и сделка обновилась
-                in_array($row[$expect_lead_key], $leads_edit))
-                $row[$expect_number_key] = '2';
+                in_array($row[$expect_lead_key], $leads_edit)) {
 
-            $result[] = $row;
+                $result[] = 2;
+
+            } else $result[] = $row[$expect_number_key];
         }
 
         $value_range = new Google_Service_Sheets_ValueRange();
-        $value_range->setValues($result);
+        $value_range->setMajorDimension('COLUMNS');
+        $value_range->setValues([$result]);
         $options = ['valueInputOption' => 'USER_ENTERED'];
         $service->spreadsheets_values->update(
-            $sheet_ID, $sheet_properties->title . '!A1:Z', $value_range, $options
+            $sheet_ID, $sheet_properties->title . '!' . $google_AZ[$expect_number_key] . '1:Z',
+            $value_range, $options
         );
         usleep(100);
     }

@@ -1,5 +1,7 @@
 <?php
 
+    include_once 'config.php';
+
     $Config = new Config();
 //    $Config->GetSettings('integratortechaccount.amocrm.ru');
     $Config->GetSettings('projapan.amocrm.ru');

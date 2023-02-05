@@ -1,10 +1,10 @@
 <?php
-    use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
+    use AmoCRM\Exceptions\AmoCRMApiException;
     use AmoCRM\Filters\LeadsFilter;
 
     include_once __DIR__ . '/../../api_google/vendor/autoload.php';
-    include_once 'config.php';
-    include 'google_config.php';
+//    include_once 'config.php';
+    include_once 'google_config.php';
 
     /* ###################################################################### */
 
@@ -44,9 +44,9 @@
         try {
             $leads_IDs = $apiClient->leads()->get((new LeadsFilter())->setIds($IDs));
             usleep(200);
-        } catch (AmoCRMException $e) {}
+        } catch (AmoCRMApiException $e) {}
         $IDs = [];
-        foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
+        if ($leads_IDs) foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
 
         // проверяем построчно сделки кроме первой (заголовка)
         foreach ($list['values'] as $key => $value) {
@@ -59,7 +59,7 @@
             try {
                 $lead_info = $apiClient->leads()->getOne($value[$lead_ID]);
                 usleep(200);
-            } catch (AmoCRMException $e) {}
+            } catch (AmoCRMApiException $e) {}
 
             // меняем ответственного и статус
             $lead_info->setResponsibleUserId($user_ID);
@@ -71,7 +71,7 @@
                 $apiClient->leads()->updateOne($lead_info);
                 usleep(200);
                 $leads_edit[] = $value[$lead_ID];
-            } catch (AmoCRMException $e) {}
+            } catch (AmoCRMApiException $e) {}
         }
     }
 
