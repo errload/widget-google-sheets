@@ -18,8 +18,11 @@
     $google->useApplicationDefaultCredentials();
     $google->addScope('https://www.googleapis.com/auth/spreadsheets');
     $service = new Google_Service_Sheets($google);
-    $sheet_ID = '1iwErd_uUFCVzIieSuMp87uqmy11VpP-ST9vqBFMn5wo';
+    $sheet_ID = '1pMraZ5_whYqLIWOo8BBJb-Fhfk8rAxwfv7T-GZ2Jx_g';
+//    $sheet_ID = '15QV9CeDMPNhsbRHyJlIXi95ZFOUQKyCCxyqIpLZl6MU';
+//    $sheet_ID = '1iwErd_uUFCVzIieSuMp87uqmy11VpP-ST9vqBFMn5wo';
     $response = $service->spreadsheets->get($sheet_ID);
+    sleep(1);
 
     $Config = new Config();
 
@@ -60,7 +63,7 @@
         $customFieldsService = $apiClient->customFields(EntityTypesInterface::LEADS);
         try {
             $fields = $customFieldsService->get();
-            usleep(200);
+            usleep(20000);
         } catch (AmoCRMException $e) {}
 
         if ($fields->count() > 0) $fields_count = true;
@@ -70,7 +73,7 @@
             if ($fields->getNextPageLink()) {
                 try {
                     $fields = $customFieldsService->nextPage($fields);
-                    usleep(200);
+                    usleep(20000);
                     $fields_count = true;
                 } catch (AmoCRMException $e) {}
             } else $fields_count = false;
@@ -80,7 +83,7 @@
         $customFieldsService = $apiClient->customFields(EntityTypesInterface::CONTACTS);
         try {
             $fields = $customFieldsService->get();
-            usleep(200);
+            usleep(20000);
         } catch (AmoCRMException $e) {}
 
         if ($fields->count() > 0) $fields_count = true;
@@ -90,55 +93,86 @@
             if ($fields->getNextPageLink()) {
                 try {
                     $fields = $customFieldsService->nextPage($fields);
-                    usleep(200);
+                    usleep(20000);
                     $fields_count = true;
                 } catch (AmoCRMException $e) {}
             } else $fields_count = false;
         }
 
         // столбцы листов
-        foreach ($response->getSheets() as $sheet) {
-            $sheet_properties = $sheet->getProperties();
-
-            // Подбор
-            if (mb_strtolower($sheet_properties->title) === 'подбор') {
-                $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
-
-                foreach ($list['values'][0] as $key => $item) {
-                    $item = trim(preg_replace('/\s+/', ' ', $item));
-                    $settings['selection'][] = $item;
-                }
-            }
-
-            // Ожидают отправку
-            if (mb_strtolower($sheet_properties->title) === 'ожидают отправку') {
-                $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
-
-                foreach ($list['values'][0] as $key => $item) {
-                    $item = trim(preg_replace('/\s+/', ' ', $item));
-                    $settings['expect'][] = $item;
-                }
-            }
-        }
-
-        // контейнеры
         $container = [];
         $settings['container'] = [];
         $is_client = false;
 
         foreach ($response->getSheets() as $sheet) {
             $sheet_properties = $sheet->getProperties();
+            sleep(1);
 
-            if (mb_strtolower($sheet_properties->title) === 'подбор' ||
-                mb_strtolower($sheet_properties->title) === 'ожидают отправку') continue;
-            $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
+            // Подбор
+            if (mb_strtolower($sheet_properties->title) === 'подбор') {
+                $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
+                sleep(1);
 
-            foreach ($list['values'][0] as $key => $item) {
-                if ($key === 0 && $is_client === true) continue;
-                $item = trim(preg_replace('/\s+/', ' ', $item));
-                $container[] = $item;
+                foreach ($list['values'][0] as $key => $item) {
+                    $item = trim(preg_replace('/\s+/', ' ', $item));
+                    $settings['selection'][] = $item;
+                }
+            // Ожидают отправку
+            } else if (mb_strtolower($sheet_properties->title) === 'ожидают отправку') {
+                $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
+                sleep(1);
+
+                foreach ($list['values'][0] as $key => $item) {
+                    $item = trim(preg_replace('/\s+/', ' ', $item));
+                    $settings['expect'][] = $item;
+                }
+            // остальные листы
+            } else {
+                $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
+                sleep(1);
+
+                $is_list = false;
+                foreach ($list['values'][0] as $key => $item) {
+                    $item = trim(preg_replace('/\s+/', ' ', $item));
+                    if (mb_strtolower($item) === 'смена статуса всех сделок в листе') $is_list = true;
+                }
+                if (!$is_list) continue;
+
+                foreach ($list['values'][0] as $key => $item) {
+                    if ($key === 0 && $is_client === true) continue;
+                    $item = trim(preg_replace('/\s+/', ' ', $item));
+                    $container[] = $item;
+                }
             }
         }
+
+        // контейнеры
+//        $container = [];
+//        $settings['container'] = [];
+//        $is_client = false;
+//
+//        foreach ($response->getSheets() as $sheet) {
+//            $sheet_properties = $sheet->getProperties();
+//            sleep(1);
+//
+//            if (mb_strtolower($sheet_properties->title) === 'подбор' ||
+//                mb_strtolower($sheet_properties->title) === 'ожидают отправку') continue;
+//            $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
+//            sleep(1);
+//
+//            $is_list = false;
+//            foreach ($list['values'][0] as $key => $item) {
+//                $item = trim(preg_replace('/\s+/', ' ', $item));
+//                if (mb_strtolower($item) === 'смена статуса всех сделок в листе') $is_list = true;
+//            }
+//            if (!$is_list) continue;
+//
+//            foreach ($list['values'][0] as $key => $item) {
+//                if ($key === 0 && $is_client === true) continue;
+//                $item = trim(preg_replace('/\s+/', ' ', $item));
+//                $container[] = $item;
+//            }
+//        }
 
         foreach ($container as $item) {
             if (!in_array($item, $settings['container'])) $settings['container'][] = $item;

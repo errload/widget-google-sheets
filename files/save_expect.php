@@ -27,8 +27,10 @@
 
     foreach ($response->getSheets() as $sheet) {
         $sheet_properties = $sheet->getProperties();
+        sleep(1);
         if (mb_strtolower($sheet_properties->title) !== 'ожидают отправку') continue;
         $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
+        sleep(1);
 
         // берем значения полей из файла настроек виджета
         if (file_exists('google_sheets/expect.json')) {
@@ -51,10 +53,10 @@
         foreach ($list['values'] as $key => $value) { $IDs[] = $value[$expect_lead_key]; }
         try {
             $leads_IDs = $apiClient->leads()->get((new LeadsFilter())->setIds($IDs));
-            usleep(200);
+            usleep(20000);
         } catch (AmoCRMApiException $e) {}
         $IDs = [];
-        foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
+        if ($leads_IDs) foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
 
         // получаем данные с цифрой копирования в сделку
         foreach ($list['values'] as $key => $value) {
@@ -94,7 +96,7 @@
         $customFieldsLeads = $apiClient->customFields(EntityTypesInterface::LEADS);
         try {
             $customFields = $customFieldsLeads->get();
-            usleep(200);
+            usleep(20000);
         } catch (AmoCRMApiException $e) {}
 
         if ($customFields->count() > 0) $fields_count = true;
@@ -108,7 +110,7 @@
             if ($customFields->getNextPageLink()) {
                 try {
                     $customFields = $customFieldsLeads->nextPage($customFields);
-                    usleep(200);
+                    usleep(20000);
                     $fields_count = true;
                 } catch (AmoCRMApiException $e) {}
             } else $fields_count = false;
@@ -118,7 +120,7 @@
         $customFieldsContacts = $apiClient->customFields(EntityTypesInterface::CONTACTS);
         try {
             $customFields = $customFieldsContacts->get();
-            usleep(200);
+            usleep(20000);
         } catch (AmoCRMApiException $e) {}
 
         foreach ($customFields as $customField) {
@@ -135,7 +137,7 @@
             // находим сделку
             try {
                 $lead_info = $apiClient->leads()->getOne((int) $ID, ['contacts']);
-                usleep(200);
+                usleep(20000);
             } catch (AmoCRMApiException $e) {}
 
             // коллекция полей сделки
@@ -160,7 +162,7 @@
             // сохраняем сделку
             try {
                 $apiClient->leads()->updateOne($lead_info);
-                usleep(200);
+                usleep(20000);
                 $leads_edit[] = $ID;
             } catch (AmoCRMApiException $e) {}
 
@@ -171,7 +173,7 @@
 
                 try {
                     $contact = $apiClient->contacts()->getOne((int) $contact_ID);
-                    usleep(200);
+                    usleep(20000);
                 } catch (AmoCRMApiException $e) {}
 
                 // коллекция полей контакта
@@ -208,7 +210,7 @@
                 // обновляем контакт
                 try {
                     $apiClient->contacts()->updateOne($contact);
-                    usleep(200);
+                    usleep(20000);
                 } catch (AmoCRMApiException $e) {}
             }
         }
@@ -242,5 +244,5 @@
             $sheet_ID, $sheet_properties->title . '!' . $google_AZ[$expect_number_key] . '1:Z',
             $value_range, $options
         );
-        usleep(100);
+        sleep(1);
     }

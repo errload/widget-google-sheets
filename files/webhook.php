@@ -29,7 +29,7 @@
         // сделка по ID
         try {
             $lead_info = $apiClient->leads()->getOne((int) $lead_ID, ['contacts']);
-            usleep(200);
+            usleep(20000);
         } catch (AmoCRMApiException $e) {}
 
         // если воронка и статус не соответствуют, пропускаем
@@ -39,8 +39,10 @@
         // лист Подбор
         foreach ($response->getSheets() as $sheet) {
             $sheet_properties = $sheet->getProperties();
+            sleep(1);
             if (mb_strtolower($sheet_properties->title) !== 'подбор') continue;
             $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
+            sleep(1);
 
             // столбцы листа Подбор
             foreach ($list['values'][0] as $key => $value) {
@@ -78,7 +80,7 @@
                 $contact_ID = $lead_info->getMainContact()->getId();
                 try {
                     $contact = $apiClient->contacts()->getOne((int) $contact_ID);
-                    usleep(200);
+                    usleep(20000);
                 } catch (AmoCRMApiException $e) {}
 
                 // поля контакта
@@ -135,7 +137,7 @@
             $manager_ID = $lead_info->getResponsibleUserId();
             try {
                 $manager = $apiClient->users()->getOne((int) $manager_ID)->getName();
-                usleep(200);
+                usleep(20000);
             } catch (AmoCRMApiException $e) {}
             $row['менеджер'] = $manager;
 
@@ -168,6 +170,6 @@
             $service->spreadsheets_values->append(
                 $sheet_ID, $sheet_properties->title . '!A1:Z', $value_range, $options
             );
-            usleep(100);
+            sleep(1);
         }
     }

@@ -25,11 +25,14 @@
 
     foreach ($response->getSheets() as $sheet) {
         $sheet_properties = $sheet->getProperties();
+        sleep(1);
         if (mb_strtolower($sheet_properties->title) !== 'подбор') continue;
         $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
+        sleep(1);
 
         // ID листа для удаления строк
         $list_ID = $sheet_properties->getSheetId();
+        sleep(1);
 
         // заголовки листа и номера столбцов сделки и цифры смены статуса
         foreach ($list['values'][0] as $key => $value) {
@@ -43,10 +46,10 @@
         foreach ($list['values'] as $key => $value) { $IDs[] = $value[$lead_ID]; }
         try {
             $leads_IDs = $apiClient->leads()->get((new LeadsFilter())->setIds($IDs));
-            usleep(200);
+            usleep(20000);
         } catch (AmoCRMApiException $e) {}
         $IDs = [];
-        if ($leads_IDs) foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
+        if ($leads_IDs->count() > 0) foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
 
         // проверяем построчно сделки кроме первой (заголовка)
         foreach ($list['values'] as $key => $value) {
@@ -58,7 +61,7 @@
             // находим сделки по ID
             try {
                 $lead_info = $apiClient->leads()->getOne($value[$lead_ID]);
-                usleep(200);
+                usleep(20000);
             } catch (AmoCRMApiException $e) {}
 
             // меняем ответственного и статус
@@ -69,7 +72,7 @@
             // обновляем сделки
             try {
                 $apiClient->leads()->updateOne($lead_info);
-                usleep(200);
+                usleep(20000);
                 $leads_edit[] = $value[$lead_ID];
             } catch (AmoCRMApiException $e) {}
         }
@@ -81,8 +84,10 @@
     // копируем сделку в лист ожидания
     foreach ($response->getSheets() as $lead) {
         $sheet_properties = $lead->getProperties();
+        sleep(1);
         if (mb_strtolower($sheet_properties->title) !== 'ожидают отправку') continue;
         $list_expect = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
+        sleep(1);
 
         // получаем заголовки листа Ожидают отправку
         foreach ($list_expect['values'][0] as $item) {
@@ -120,7 +125,7 @@
             $service->spreadsheets_values->append(
                 $sheet_ID, $sheet_properties->title . '!A1:Z', $value_range, $options
             );
-            usleep(100);
+            sleep(1);
         }
     }
 
@@ -146,4 +151,5 @@
 
         $batchUpdateRequest = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest(['requests' => $requests]);
         $service->spreadsheets->batchUpdate($sheet_ID, $batchUpdateRequest);
+        sleep(1);
     }

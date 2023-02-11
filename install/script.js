@@ -26,6 +26,12 @@ define(['jquery', 'underscore', 'twigjs', 'lib/components/base/modal'], function
 
         // показываем настройки
         this.showSettingsJSON = function () {
+            $('.widget_settings_block .widget_settings_block__controls').before(`
+                <div class="widget_settings_block__wait">
+                    Идёт загрузка данных листов таблицы...
+                </div>
+            `);
+
             $.ajax({
                 url: url_link_t,
                 method: 'post',
@@ -35,7 +41,7 @@ define(['jquery', 'underscore', 'twigjs', 'lib/components/base/modal'], function
                 },
                 dataType: 'json',
                 success: function(settings) {
-                    // console.log(settings);
+                    $('.widget_settings_block .widget_settings_block__wait').remove();
 
                     // модалка обязательности полей
                     link_settings = `

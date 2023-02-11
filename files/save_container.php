@@ -32,10 +32,10 @@
     $customFieldsLeads = $apiClient->customFields(EntityTypesInterface::LEADS);
     try {
         $customFields = $customFieldsLeads->get();
-        usleep(200);
+        usleep(20000);
     } catch (AmoCRMApiException $e) {}
 
-    if ($customFields->count() > 0) $fields_count = true;
+    if ($customFields->count()) $fields_count = true;
     while ($fields_count) {
         foreach ($customFields as $customField) {
             $class = explode('\\', get_class($customField));
@@ -46,7 +46,7 @@
         if ($customFields->getNextPageLink()) {
             try {
                 $customFields = $customFieldsLeads->nextPage($customFields);
-                usleep(200);
+                usleep(20000);
                 $fields_count = true;
             } catch (AmoCRMApiException $e) {}
         } else $fields_count = false;
@@ -56,7 +56,7 @@
     $customFieldsContacts = $apiClient->customFields(EntityTypesInterface::CONTACTS);
     try {
         $customFields = $customFieldsContacts->get();
-        usleep(200);
+        usleep(20000);
     } catch (AmoCRMApiException $e) {}
 
     foreach ($customFields as $customField) {
@@ -67,9 +67,18 @@
 
     foreach ($response->getSheets() as $sheet) {
         $sheet_properties = $sheet->getProperties();
+        sleep(1);
         if (mb_strtolower($sheet_properties->title) === 'подбор' ||
             mb_strtolower($sheet_properties->title) === 'ожидают отправку') continue;
         $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
+        sleep(1);
+
+        $is_list = false;
+        foreach ($list['values'][0] as $key => $item) {
+            $item = trim(preg_replace('/\s+/', ' ', $item));
+            if (mb_strtolower($item) === 'смена статуса всех сделок в листе') $is_list = true;
+        }
+        if (!$is_list) continue;
 
         $IDs = []; // ID существующих сделок для запроса
         $container_number_key = null; // номер столбца смены статуса и воронки
@@ -83,7 +92,7 @@
         // находим ID статуса по названию листа
         try {
             $pipelines = $apiClient->pipelines()->getOne($pipeline_ID)->getStatuses();
-            usleep(200);
+            usleep(20000);
         } catch (AmoCRMApiException $e) {}
 
         foreach ($pipelines as $status) {
@@ -115,7 +124,7 @@
         foreach ($list['values'] as $key => $value) { $IDs[] = $value[$container_lead_key]; }
         try {
             $leads_IDs = $apiClient->leads()->get((new LeadsFilter())->setIds($IDs));
-            usleep(200);
+            usleep(20000);
         } catch (AmoCRMApiException $e) {}
         $IDs = [];
         foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
@@ -154,7 +163,7 @@
             // находим сделку
             try {
                 $lead_info = $apiClient->leads()->getOne((int) $ID, ['contacts']);
-                usleep(200);
+                usleep(20000);
             } catch (AmoCRMApiException $e) {}
 
             // коллекция полей сделки
@@ -183,7 +192,7 @@
             // сохраняем сделку
             try {
                 $apiClient->leads()->updateOne($lead_info);
-                usleep(200);
+                usleep(20000);
                 $leads_edit[] = $ID;
             } catch (AmoCRMApiException $e) {}
 
@@ -194,7 +203,7 @@
 
                 try {
                     $contact = $apiClient->contacts()->getOne((int) $contact_ID);
-                    usleep(200);
+                    usleep(20000);
                 } catch (AmoCRMApiException $e) {}
 
                 // коллекция полей контакта
@@ -231,7 +240,7 @@
                 // обновляем контакт
                 try {
                     $apiClient->contacts()->updateOne($contact);
-                    usleep(200);
+                    usleep(20000);
                 } catch (AmoCRMApiException $e) {}
             }
         }
@@ -260,5 +269,5 @@
             $sheet_ID, $sheet_properties->title . '!' . $google_AZ[$container_number_key] . '1:Z',
             $value_range, $options
         );
-        usleep(100);
+        sleep(1);
     }
