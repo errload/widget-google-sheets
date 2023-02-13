@@ -1,6 +1,6 @@
 <?php
     use AmoCRM\Helpers\EntityTypesInterface;
-    use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
+    use AmoCRM\Exceptions\AmoCRMApiException;
 
     ini_set('error_log', 'error_in_templates.log');
     date_default_timezone_set('Europe/Moscow');
@@ -18,11 +18,27 @@
     $google->useApplicationDefaultCredentials();
     $google->addScope('https://www.googleapis.com/auth/spreadsheets');
     $service = new Google_Service_Sheets($google);
-    $sheet_ID = '1pMraZ5_whYqLIWOo8BBJb-Fhfk8rAxwfv7T-GZ2Jx_g';
-//    $sheet_ID = '15QV9CeDMPNhsbRHyJlIXi95ZFOUQKyCCxyqIpLZl6MU';
-//    $sheet_ID = '1iwErd_uUFCVzIieSuMp87uqmy11VpP-ST9vqBFMn5wo';
+    //    $sheet_ID = '1pMraZ5_whYqLIWOo8BBJb-Fhfk8rAxwfv7T-GZ2Jx_g';
+    //    $sheet_ID = '15QV9CeDMPNhsbRHyJlIXi95ZFOUQKyCCxyqIpLZl6MU';
+    $sheet_ID = '1iwErd_uUFCVzIieSuMp87uqmy11VpP-ST9vqBFMn5wo';
     $response = $service->spreadsheets->get($sheet_ID);
     sleep(1);
+
+    // получение данных таблицы
+    function getValues($service, $sheet_ID, $sheet_title) {
+        try {
+            $list = $service->spreadsheets_values->get($sheet_ID, $sheet_title);
+            sleep(1);
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors()[0]['reason'];
+            if ($reason === 'rateLimitExceeded') {
+                sleep(5);
+                return getValues($service, $sheet_ID, $sheet_title);
+            }
+        }
+
+        return $list;
+    }
 
     $Config = new Config();
 
@@ -64,7 +80,7 @@
         try {
             $fields = $customFieldsService->get();
             usleep(20000);
-        } catch (AmoCRMException $e) {}
+        } catch (AmoCRMApiException $e) {}
 
         if ($fields->count() > 0) $fields_count = true;
         while ($fields_count) {
@@ -75,7 +91,7 @@
                     $fields = $customFieldsService->nextPage($fields);
                     usleep(20000);
                     $fields_count = true;
-                } catch (AmoCRMException $e) {}
+                } catch (AmoCRMApiException $e) {}
             } else $fields_count = false;
         }
 
@@ -84,7 +100,7 @@
         try {
             $fields = $customFieldsService->get();
             usleep(20000);
-        } catch (AmoCRMException $e) {}
+        } catch (AmoCRMApiException $e) {}
 
         if ($fields->count() > 0) $fields_count = true;
         while ($fields_count) {
@@ -95,7 +111,7 @@
                     $fields = $customFieldsService->nextPage($fields);
                     usleep(20000);
                     $fields_count = true;
-                } catch (AmoCRMException $e) {}
+                } catch (AmoCRMApiException $e) {}
             } else $fields_count = false;
         }
 
@@ -105,22 +121,20 @@
         $is_client = false;
 
         foreach ($response->getSheets() as $sheet) {
-            $sheet_properties = $sheet->getProperties();
+            $sheet_title = mb_strtolower($sheet->getProperties()->title);
             sleep(1);
 
             // Подбор
-            if (mb_strtolower($sheet_properties->title) === 'подбор') {
-                $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
-                sleep(1);
+            if ($sheet_title === 'подбор') {
+                $list = getValues($service, $sheet_ID, $sheet_title);
 
                 foreach ($list['values'][0] as $key => $item) {
                     $item = trim(preg_replace('/\s+/', ' ', $item));
                     $settings['selection'][] = $item;
                 }
             // Ожидают отправку
-            } else if (mb_strtolower($sheet_properties->title) === 'ожидают отправку') {
-                $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
-                sleep(1);
+            } else if ($sheet_title === 'ожидают отправку') {
+                $list = getValues($service, $sheet_ID, $sheet_title);
 
                 foreach ($list['values'][0] as $key => $item) {
                     $item = trim(preg_replace('/\s+/', ' ', $item));
@@ -128,9 +142,9 @@
                 }
             // остальные листы
             } else {
-                $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
-                sleep(1);
+                $list = getValues($service, $sheet_ID, $sheet_title);
 
+                // проверка на соответствие листа
                 $is_list = false;
                 foreach ($list['values'][0] as $key => $item) {
                     $item = trim(preg_replace('/\s+/', ' ', $item));
@@ -145,34 +159,6 @@
                 }
             }
         }
-
-        // контейнеры
-//        $container = [];
-//        $settings['container'] = [];
-//        $is_client = false;
-//
-//        foreach ($response->getSheets() as $sheet) {
-//            $sheet_properties = $sheet->getProperties();
-//            sleep(1);
-//
-//            if (mb_strtolower($sheet_properties->title) === 'подбор' ||
-//                mb_strtolower($sheet_properties->title) === 'ожидают отправку') continue;
-//            $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
-//            sleep(1);
-//
-//            $is_list = false;
-//            foreach ($list['values'][0] as $key => $item) {
-//                $item = trim(preg_replace('/\s+/', ' ', $item));
-//                if (mb_strtolower($item) === 'смена статуса всех сделок в листе') $is_list = true;
-//            }
-//            if (!$is_list) continue;
-//
-//            foreach ($list['values'][0] as $key => $item) {
-//                if ($key === 0 && $is_client === true) continue;
-//                $item = trim(preg_replace('/\s+/', ' ', $item));
-//                $container[] = $item;
-//            }
-//        }
 
         foreach ($container as $item) {
             if (!in_array($item, $settings['container'])) $settings['container'][] = $item;

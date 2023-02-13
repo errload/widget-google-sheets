@@ -26,46 +26,34 @@ define(['jquery', 'underscore', 'twigjs', 'lib/components/base/modal'], function
 
         // показываем настройки
         this.showSettingsJSON = function () {
-            $('.widget_settings_block .widget_settings_block__controls').before(`
-                <div class="widget_settings_block__wait">
-                    Идёт загрузка данных листов таблицы...
+            // модалка обязательности полей
+            link_settings = `
+                <div class="widget_settings_block__item_field" style="margin-top: 10px;">
+                    <div class="widget_settings_block__title_field" title="">
+                        <a href="" style="color: #979797; color: #4c8bf7;" class="help_link">
+                            Справка по полям обязательности
+                        </a>
+                        
+                        <div class="widget_settings_block__wait" style="margin-top: 3px; width: 100%;">
+                            Идёт загрузка данных листов таблицы...
+                        </div>
+                    </div>
                 </div>
-            `);
+            `;
 
-            $.ajax({
-                url: url_link_t,
-                method: 'post',
-                data: {
-                    'domain': document.domain,
-                    'method': 'showSettingsJSON'
-                },
-                dataType: 'json',
-                success: function(settings) {
-                    $('.widget_settings_block .widget_settings_block__wait').remove();
+            $('.widget_settings_block .widget_settings_block__controls').before(link_settings);
 
-                    // модалка обязательности полей
-                    link_settings = `
-                            <div class="widget_settings_block__item_field" style="margin-top: 10px;">
-                                <div class="widget_settings_block__title_field" title="">
-                                    <a href="" style="color: #979797; color: #4c8bf7;" class="help_link">
-                                        Справка по полям обязательности
-                                    </a>
-                                </div>
-                            </div>
-                        `;
-                    $('.widget_settings_block__controls').before(link_settings);
+            $('.help_link').unbind();
+            $('.help_link').bind('click', function (e) {
+                e.preventDefault();
 
-                    $('.help_link').unbind();
-                    $('.help_link').bind('click', function (e) {
-                        e.preventDefault();
-
-                        new Modal({
-                            class_name: 'modal_help',
-                            init: function ($modal_body) {
-                                var $this = $(this);
-                                $modal_body
-                                    .trigger('modal:loaded')
-                                    .html(`
+                new Modal({
+                    class_name: 'modal_help',
+                    init: function ($modal_body) {
+                        var $this = $(this);
+                        $modal_body
+                            .trigger('modal:loaded')
+                            .html(`
                                         <div class="modal_help_info" style="height: 350px;">
                                             <h1 class="modal-body__caption head_2">Правила именования</h1>
                                             Первый столбец во всех листах - Имя клиента </br></br>
@@ -83,15 +71,15 @@ define(['jquery', 'underscore', 'twigjs', 'lib/components/base/modal'], function
                                                 - Смена статуса всех сделок в листе                                            
                                         </div>
                                     `)
-                                    .trigger('modal:centrify')
-                                    .append('');
-                            },
-                            destroy: function () {}
-                        });
+                            .trigger('modal:centrify')
+                            .append('');
+                    },
+                    destroy: function () {}
+                });
 
-                        // кнопка Закрыть
-                        $('.modal_help').css('position', 'relative');
-                        var cancelBtn = `
+                // кнопка Закрыть
+                $('.modal_help').css('position', 'relative');
+                var cancelBtn = `
                             <a href="#" class="modal__cancelBtn__help" style="
                                 text-decoration: none;
                                 color: #92989b;
@@ -102,14 +90,23 @@ define(['jquery', 'underscore', 'twigjs', 'lib/components/base/modal'], function
                                 position: absolute;
                             ">Закрыть</a>
                         `;
-                        $('.modal_help_info').append(cancelBtn);
-                        $('.modal__cancelBtn__help').bind('click', function (e) {
-                            e.preventDefault();
-                            $('.modal_help').remove();
-                        });
-                    });
+                $('.modal_help_info').append(cancelBtn);
+                $('.modal__cancelBtn__help').bind('click', function (e) {
+                    e.preventDefault();
+                    $('.modal_help').remove();
+                });
+            });
 
-                    /* ##################################################################### */
+            $.ajax({
+                url: url_link_t,
+                method: 'post',
+                data: {
+                    'domain': document.domain,
+                    'method': 'showSettingsJSON'
+                },
+                dataType: 'json',
+                success: function(settings) {
+                    $('.widget_settings_block .widget_settings_block__wait').remove();
 
                     var select_leads, select_contacts, title, select,
                         fields_leads = [],
@@ -152,7 +149,7 @@ define(['jquery', 'underscore', 'twigjs', 'lib/components/base/modal'], function
                     // столбцы листа Подбор
                     if (settings.selection && settings.fields_leads && settings.fields_contacts) {
                         select_settings = `
-                            <div class="widget_settings_block__item_field" style="margin-top: 10px;">
+                            <div class="widget_settings_block__item_field selection" style="margin-top: 10px;">
                                 <div class="widget_settings_block__title_field" title="" style="
                                     margin-bottom: 5px; font-weight: bold;">
                                     Настройка листа "Подбор":
@@ -226,7 +223,7 @@ define(['jquery', 'underscore', 'twigjs', 'lib/components/base/modal'], function
                     // столбцы листа Ожидают отправки
                     if (settings.expect && settings.fields_leads && settings.fields_contacts) {
                         select_settings = `
-                            <div class="widget_settings_block__item_field" style="margin-top: 10px;">
+                            <div class="widget_settings_block__item_field expect" style="margin-top: 10px;">
                                 <div class="widget_settings_block__title_field" title="" style="
                                     margin-bottom: 5px; font-weight: bold;">
                                     Настройка листа "Ожидают отправку":
@@ -300,7 +297,7 @@ define(['jquery', 'underscore', 'twigjs', 'lib/components/base/modal'], function
                     // столбцы листов контейнеров
                     if (settings.expect && settings.fields_leads && settings.fields_contacts) {
                         select_settings = `
-                            <div class="widget_settings_block__item_field" style="margin-top: 10px;">
+                            <div class="widget_settings_block__item_field container" style="margin-top: 10px;">
                                 <div class="widget_settings_block__title_field" title="" style="
                                     margin-bottom: 5px; font-weight: bold;">
                                     Настройка листов контейнеров:
