@@ -1,25 +1,22 @@
 <?php
     // если виджет не установлен, выходим
-    if (!file_exists('install.json')) return;
+    if (!file_exists('install')) return;
 
     use AmoCRM\Exceptions\AmoCRMApiException;
 
     include_once __DIR__ . '/../../api_google/vendor/autoload.php';
-//    include_once 'config.php';
     include_once 'google_config.php';
 
     /* ###################################################################### */
 
-//    $pipeline_ID = 6149530; // воронка Депозит (integratortechaccount)
-    $pipeline_ID = 605716; // воронка Депозит
-
+    $pipeline_ID = 6149530; // воронка Депозит (integratortechaccount)
+//    $pipeline_ID = 605716; // воронка Депозит
 
     $selection_title = []; // столбцы листа Подбор
     $selection_file = []; // поля из файла настроек виджета
     $row = []; // массив полей сделки и контакта
     $result_row = []; // результирующий массив для записи в таблицу
-    $list_ID = null; // номер столбца с ID сделкой
-    $list_link = null; // номер столбца с сылкой на сделку
+    $lead_key_ID = null; // номер столбца с ID сделки
 
     // данные по webhook
     if ($_POST['leads']['status'][0]['id']) {
@@ -38,11 +35,17 @@
 
         // лист Подбор
         foreach ($response->getSheets() as $sheet) {
-            $sheet_properties = $sheet->getProperties();
+            // создаем файл старта хука
+            file_put_contents('start_hook', '');
+            // тормозим работу, если запущены другие реквесты
+            while (file_exists('start')) sleep(5);
+            while (file_exists('start_settings')) sleep(5);
+
+            $sheet_title = mb_strtolower($sheet->getProperties()->title);
             sleep(1);
-            if (mb_strtolower($sheet_properties->title) !== 'подбор') continue;
-            $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
-            sleep(1);
+
+            if ($sheet_title !== 'подбор') continue;
+            $list = getValues($service, $sheet_ID, $sheet_title);
 
             // столбцы листа Подбор
             foreach ($list['values'][0] as $key => $value) {
@@ -65,7 +68,7 @@
             foreach ($list['values'] as $key => $value) {
                 if ($value[$lead_key_ID] === $lead_ID) $is_lead = true;
             }
-            if ($is_lead) return false;
+            if ($is_lead) continue;
 
             // поля из файла настроек виджета
             if (file_exists('selection.json')) {
@@ -168,8 +171,11 @@
             $value_range->setValues([$result_row]);
             $options = ['valueInputOption' => 'USER_ENTERED'];
             $service->spreadsheets_values->append(
-                $sheet_ID, $sheet_properties->title . '!A1:Z', $value_range, $options
+                $sheet_ID, $sheet_title . '!A1:Z', $value_range, $options
             );
             sleep(1);
+
+            // удаляем файл старта хука
+            if (file_exists('start_hook')) unlink('start_hook');
         }
     }

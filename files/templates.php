@@ -75,6 +75,12 @@
     if ($_POST['method'] == 'showSettingsJSON' && $Config->CheckToken()) {
         $settings = [];
 
+        // создаем файл старта настроек
+        file_put_contents('start_settings', '');
+        // тормозим работу, если запущены другие реквесты
+        while (file_exists('start')) sleep(5);
+        while (file_exists('start_hook')) sleep(5);
+
         // поля сделок
         $customFieldsService = $apiClient->customFields(EntityTypesInterface::LEADS);
         try {
@@ -180,6 +186,8 @@
             $settings['container_JSON'] = json_decode($file, true);
         }
 
+        // удаляем файл старта настроек
+        if (file_exists('start_settings')) unlink('start_settings');
         print_r(json_encode($settings));
     }
 
@@ -245,14 +253,14 @@
         if (!$result->num_rows) $mysqli->query($insert);
     }
 
-    // create install.widget
+    // create install widget
     if ($_POST['method'] == 'widget_status' && $Config->CheckToken()) {
         if ($_POST['status'] === 'install') {
-            if (file_exists('install.json')) return;
-            file_put_contents('install.json', '');
+            if (file_exists('install')) return;
+            file_put_contents('install', '');
         } else if ($_POST['status'] === 'destroy') {
-            if (!file_exists('install.json')) return;
-            unlink('install.json');
+            if (!file_exists('install')) return;
+            unlink('install');
         }
     }
 

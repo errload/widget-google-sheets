@@ -3,8 +3,8 @@
     include_once 'config.php';
 
     $Config = new Config();
-//    $Config->GetSettings('integratortechaccount.amocrm.ru');
-    $Config->GetSettings('projapan.amocrm.ru');
+    $Config->GetSettings('integratortechaccount.amocrm.ru');
+//    $Config->GetSettings('projapan.amocrm.ru');
     if (!$Config->CheckToken()) return;
     $apiClient = $Config->getAMO_apiClient();
 
@@ -20,3 +20,19 @@
     $sheet_ID = '1iwErd_uUFCVzIieSuMp87uqmy11VpP-ST9vqBFMn5wo';
     $response = $service->spreadsheets->get($sheet_ID);
     sleep(1);
+
+    // получение данных таблицы
+    function getValues($service, $sheet_ID, $sheet_title) {
+        try {
+            $list = $service->spreadsheets_values->get($sheet_ID, $sheet_title);
+            sleep(1);
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors()[0]['reason'];
+            if ($reason === 'rateLimitExceeded') {
+                sleep(5);
+                return getValues($service, $sheet_ID, $sheet_title);
+            }
+        }
+
+        return $list;
+    }
