@@ -95,7 +95,7 @@
     }
 
     // копируем сделку в лист ожидания
-    foreach ($response->getSheets() as $lead) {
+    foreach ($response->getSheets() as $sheet) {
         isPause();
         $sheet_title = $sheet->getProperties()->title;
         sleep(1);
