@@ -75,13 +75,14 @@
     if ($_POST['method'] == 'showSettingsJSON' && $Config->CheckToken()) {
         $settings = [];
 
+        // если был отправлен хук, ждем пока завершит реквесты
+        while (file_exists('start_hook')) sleep(5);
+
         // ставим паузу для других реквестов
         while (file_exists('start_settings')) sleep(5);
         file_put_contents('pause', '');
         file_put_contents('start_settings', '');
         sleep(1);
-        // если был отправлен хук, ждем пока завершит реквесты
-        while (file_exists('start_hook')) sleep(5);
 
         // поля сделок
         $customFieldsService = $apiClient->customFields(EntityTypesInterface::LEADS);

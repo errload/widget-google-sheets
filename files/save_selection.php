@@ -1,7 +1,6 @@
 <?php
-    // если процесс уже запущен, выходим, иначе запускаем
-    if (file_exists('google_sheets/start')) return;
-    else file_put_contents('google_sheets/start', '');
+    // запускаем файлы проверки
+    file_put_contents('google_sheets/start', '');
 
     use AmoCRM\Exceptions\AmoCRMApiException;
     use AmoCRM\Filters\LeadsFilter;
@@ -90,7 +89,7 @@
 
     // если по какой-то причине сделки не сменили статус и массив пуст, выходим
     if (!count($leads_edit)) {
-        deleteStart();
+        file_put_contents('google_sheets/step2', '');
         return;
     }
 
@@ -139,10 +138,19 @@
             $value_range = new Google_Service_Sheets_ValueRange();
             $value_range->setValues([$result]);
             $options = ['valueInputOption' => 'USER_ENTERED'];
-            $service->spreadsheets_values->append(
-                $sheet_ID, $sheet_title . '!A1:Z', $value_range, $options
-            );
-            sleep(1);
+
+            try {
+                $service->spreadsheets_values->append(
+                    $sheet_ID, $sheet_title . '!A1:Z', $value_range, $options
+                );
+                sleep(1);
+            } catch (Google_Service_Exception $exception) {
+                $reason = $exception->getErrors();
+                if ($reason) {
+                    if (file_exists('google_sheets/start')) unlink('google_sheets/start');
+                }
+            }
+
         }
     }
 
@@ -167,9 +175,17 @@
         ];
 
         isPause();
-        $batchUpdateRequest = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest(['requests' => $requests]);
-        $service->spreadsheets->batchUpdate($sheet_ID, $batchUpdateRequest);
-        sleep(1);
-        deleteStart();
+        try {
+            $batchUpdateRequest = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest(['requests' => $requests]);
+            $service->spreadsheets->batchUpdate($sheet_ID, $batchUpdateRequest);
+            sleep(1);
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) {
+                if (file_exists('google_sheets/start')) unlink('google_sheets/start');
+            }
+        }
+
+        file_put_contents('google_sheets/step2', '');
     }
 

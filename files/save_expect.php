@@ -9,7 +9,6 @@
     use AmoCRM\Filters\LeadsFilter;
 
     include_once __DIR__ . '/../../api_google/vendor/autoload.php';
-//    include_once 'config.php';
     include_once 'google_config.php';
 
     /* ###################################################################### */
@@ -26,11 +25,14 @@
     $leads_edit = []; // ID сделок для изменения цифры
 
     foreach ($response->getSheets() as $sheet) {
-        $sheet_properties = $sheet->getProperties();
+        isPause();
+        $sheet_title = $sheet->getProperties()->title;
         sleep(1);
-        if (mb_strtolower($sheet_properties->title) !== 'ожидают отправку') continue;
-        $list = $service->spreadsheets_values->get($sheet_ID, $sheet_properties->title);
-        sleep(1);
+
+        if (mb_strtolower($sheet_title) !== 'ожидают отправку') continue;
+
+        isPause();
+        $list = getValues($service, $sheet_ID, $sheet_title);
 
         // берем значения полей из файла настроек виджета
         if (file_exists('google_sheets/expect.json')) {
@@ -67,7 +69,11 @@
         }
 
         // если нет подходящих записей, выходим
-        if (!count($expect_table)) return;
+        if (!count($expect_table)) {
+            if (file_exists('google_sheets/step2')) unlink('google_sheets/step2');
+            file_put_contents('google_sheets/step3', '');
+            return;
+        }
 
         // перебор полученных строк с таблицы
         foreach ($expect_table as $rows) {
@@ -227,22 +233,32 @@
         foreach ($list['values'] as $key => $row) {
             // если не первая строка и смена статуса с цифрой 1, меняем на 2, иначе просто перезаписываем
             if ($key !== 0 &&
-                (int)$row[$expect_number_key] === 1 &&
+                (int) $row[$expect_number_key] === 1 &&
                 // и сделка обновилась
                 in_array($row[$expect_lead_key], $leads_edit)) {
 
-                $result[] = 2;
+                $result[$key] = 2;
 
             } else $result[] = $row[$expect_number_key];
         }
 
+        isPause();
         $value_range = new Google_Service_Sheets_ValueRange();
         $value_range->setMajorDimension('COLUMNS');
         $value_range->setValues([$result]);
         $options = ['valueInputOption' => 'USER_ENTERED'];
-        $service->spreadsheets_values->update(
-            $sheet_ID, $sheet_properties->title . '!' . $google_AZ[$expect_number_key] . '1:Z',
-            $value_range, $options
-        );
-        sleep(1);
+
+//        try {
+            $service->spreadsheets_values->update(
+                $sheet_ID, $sheet_title . '!' . $google_AZ[$expect_number_key] . '1:Z',
+                $value_range, $options
+            );
+            sleep(1);
+//        } catch (Google_Service_Exception $exception) {
+//            $reason = $exception->getErrors();
+//            if ($reason) nullStart();
+//        }
+
+        if (file_exists('google_sheets/step2')) unlink('google_sheets/step2');
+        file_put_contents('google_sheets/step3', '');
     }
