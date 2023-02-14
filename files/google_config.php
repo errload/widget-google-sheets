@@ -36,3 +36,13 @@
 
         return $list;
     }
+
+    // проверка паузы
+    function isPause() {
+        while (file_exists('google_sheets/pause')) sleep(5);
+    }
+
+    // удаление файла старта
+    function deleteStart() {
+        if (file_exists('google_sheets/start')) unlink('google_sheets/start');
+    }

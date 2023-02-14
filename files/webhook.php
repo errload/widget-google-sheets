@@ -2,6 +2,14 @@
     // если виджет не установлен, выходим
     if (!file_exists('install')) return;
 
+    // ставим паузу для других реквестов
+    while (file_exists('start_hook')) sleep(5);
+    file_put_contents('pause', '');
+    file_put_contents('start_hook', '');
+    sleep(1);
+    // если открыты настройки ждем пока завершат реквесты
+    while (file_exists('start_settings')) sleep(5);
+
     use AmoCRM\Exceptions\AmoCRMApiException;
 
     include_once __DIR__ . '/../../api_google/vendor/autoload.php';
@@ -30,21 +38,25 @@
         } catch (AmoCRMApiException $e) {}
 
         // если воронка и статус не соответствуют, пропускаем
-        if ($lead_info->getPipelineId() !== $pipeline_ID) return;
-        if ($lead_info->getStatusId() !== 142) return;
+        if (!$lead_info || $lead_info->getPipelineId() !== $pipeline_ID) {
+            // удаляем файлы паузы и хука
+            if (file_exists('pause')) unlink('pause');
+            if (file_exists('start_hook')) unlink('start_hook');
+            return;
+        }
+        if (!$lead_info || $lead_info->getStatusId() !== 142) {
+            // удаляем файлы паузы и хука
+            if (file_exists('pause')) unlink('pause');
+            if (file_exists('start_hook')) unlink('start_hook');
+            return;
+        }
 
         // лист Подбор
         foreach ($response->getSheets() as $sheet) {
-            // создаем файл старта хука
-            file_put_contents('start_hook', '');
-            // тормозим работу, если запущены другие реквесты
-            while (file_exists('start')) sleep(5);
-            while (file_exists('start_settings')) sleep(5);
-
-            $sheet_title = mb_strtolower($sheet->getProperties()->title);
+            $sheet_title = $sheet->getProperties()->title;
             sleep(1);
 
-            if ($sheet_title !== 'подбор') continue;
+            if (mb_strtolower($sheet_title) !== 'подбор') continue;
             $list = getValues($service, $sheet_ID, $sheet_title);
 
             // столбцы листа Подбор
@@ -174,8 +186,9 @@
                 $sheet_ID, $sheet_title . '!A1:Z', $value_range, $options
             );
             sleep(1);
-
-            // удаляем файл старта хука
-            if (file_exists('start_hook')) unlink('start_hook');
         }
     }
+
+    // удаляем файлы паузы и хука
+    if (file_exists('pause')) unlink('pause');
+    if (file_exists('start_hook')) unlink('start_hook');

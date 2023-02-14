@@ -75,10 +75,12 @@
     if ($_POST['method'] == 'showSettingsJSON' && $Config->CheckToken()) {
         $settings = [];
 
-        // создаем файл старта настроек
+        // ставим паузу для других реквестов
+        while (file_exists('start_settings')) sleep(5);
+        file_put_contents('pause', '');
         file_put_contents('start_settings', '');
-        // тормозим работу, если запущены другие реквесты
-        while (file_exists('start')) sleep(5);
+        sleep(1);
+        // если был отправлен хук, ждем пока завершит реквесты
         while (file_exists('start_hook')) sleep(5);
 
         // поля сделок
@@ -186,8 +188,10 @@
             $settings['container_JSON'] = json_decode($file, true);
         }
 
-        // удаляем файл старта настроек
+        // удаляем файлы паузы и настроек
+        if (file_exists('pause')) unlink('pause');
         if (file_exists('start_settings')) unlink('start_settings');
+
         print_r(json_encode($settings));
     }
 
