@@ -260,13 +260,20 @@
             // если не первая строка и смена статуса с цифрой 1, меняем на 2, иначе просто перезаписываем
             if ($key === 1 && (int) $row[$container_number_key] === 1) {
                 $result[] = 2;
-            } else $result[] = $row[$container_number_key];
+            } else if ($row[$container_number_key]) $result[] = $row[$container_number_key];
+            else $result[] = 'null';
+        }
+
+        $result_row = [];
+        foreach ($result as $item) {
+            if ($item === 'null') $result_row[] = '';
+            else $result_row[] = $item;
         }
 
         isPause();
         $value_range = new Google_Service_Sheets_ValueRange();
         $value_range->setMajorDimension('COLUMNS');
-        $value_range->setValues([$result]);
+        $value_range->setValues([$result_row]);
         $options = ['valueInputOption' => 'USER_ENTERED'];
 
         try {
