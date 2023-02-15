@@ -43,15 +43,26 @@
         sleep(1);
 
         // заголовки листа и номера столбцов сделки и цифры смены статуса
-        foreach ($list['values'][0] as $key => $value) {
-            $value = mb_strtolower(trim(preg_replace('/\s+/', ' ', $value)));
-            if ($value === 'смена воронки и статуса') $number_ID = $key;
-            if ($value === 'id сделки') $lead_ID = $key;
-            $selection_title[] = $value;
+        try {
+            foreach ($list['values'][0] as $key => $value) {
+                $value = mb_strtolower(trim(preg_replace('/\s+/', ' ', $value)));
+                if ($value === 'смена воронки и статуса') $number_ID = $key;
+                if ($value === 'id сделки') $lead_ID = $key;
+                $selection_title[] = $value;
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
 
         // ID существующих сделок для запроса
-        foreach ($list['values'] as $key => $value) { $IDs[] = $value[$lead_ID]; }
+        try {
+            foreach ($list['values'] as $key => $value) { $IDs[] = $value[$lead_ID]; }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
+        }
+
         try {
             $leads_IDs = $apiClient->leads()->get((new LeadsFilter())->setIds($IDs));
             usleep(20000);
@@ -61,29 +72,34 @@
         if ($leads_IDs) foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
 
         // проверяем построчно сделки кроме первой (заголовка)
-        foreach ($list['values'] as $key => $value) {
-            if ($key === 0) continue;
-            if (!$value[$number_ID] || (int) $value[$number_ID] !== 1) continue;
-            // если такой сделки не существует, пропускаем
-            if (!in_array($value[$lead_ID], $IDs)) continue;
+        try {
+            foreach ($list['values'] as $key => $value) {
+                if ($key === 0) continue;
+                if (!$value[$number_ID] || (int) $value[$number_ID] !== 1) continue;
+                // если такой сделки не существует, пропускаем
+                if (!in_array($value[$lead_ID], $IDs)) continue;
 
-            // находим сделки по ID
-            try {
-                $lead_info = $apiClient->leads()->getOne($value[$lead_ID]);
-                usleep(20000);
-            } catch (AmoCRMApiException $e) {}
+                // находим сделки по ID
+                try {
+                    $lead_info = $apiClient->leads()->getOne($value[$lead_ID]);
+                    usleep(20000);
+                } catch (AmoCRMApiException $e) {}
 
-            // меняем ответственного и статус
-            $lead_info->setResponsibleUserId($user_ID);
-            $lead_info->setPipelineId($pipeline_ID);
-            $lead_info->setStatusId($status_ID);
+                // меняем ответственного и статус
+                $lead_info->setResponsibleUserId($user_ID);
+                $lead_info->setPipelineId($pipeline_ID);
+                $lead_info->setStatusId($status_ID);
 
-            // обновляем сделки
-            try {
-                $apiClient->leads()->updateOne($lead_info);
-                usleep(20000);
-                $leads_edit[] = $value[$lead_ID];
-            } catch (AmoCRMApiException $e) {}
+                // обновляем сделки
+                try {
+                    $apiClient->leads()->updateOne($lead_info);
+                    usleep(20000);
+                    $leads_edit[] = $value[$lead_ID];
+                } catch (AmoCRMApiException $e) {}
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
     }
 
@@ -105,52 +121,66 @@
         $list_expect = getValues($service, $sheet_ID, $sheet_title);
 
         // получаем заголовки листа Ожидают отправку
-        foreach ($list_expect['values'][0] as $item) {
-            $item = mb_strtolower(trim(preg_replace('/\s+/', ' ', $item)));
-            $expect_title[] = $item;
+        try {
+            foreach ($list_expect['values'][0] as $item) {
+                $item = mb_strtolower(trim(preg_replace('/\s+/', ' ', $item)));
+                $expect_title[] = $item;
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
 
         // проверяем построчно сделки кроме первой (заголовка)
-        foreach ($list['values'] as $key => $value) {
-            if ($key === 0) continue;
+        try {
+            foreach ($list['values'] as $key => $value) {
+                if ($key === 0) continue;
 
-            // если такая сделка не имела цифру 1 и не изменила статус, пропускаем
-            if (!in_array($value[$lead_ID], $leads_edit)) continue;
+                // если такая сделка не имела цифру 1 и не изменила статус, пропускаем
+                if (!in_array($value[$lead_ID], $leads_edit)) continue;
 
-            // создаем результирующий массив для добавления в лист Ожидают отправку
-            $result = [];
-            foreach ($expect_title as $item) {
-                $is_write = false;
-                if ($item === 'смена воронки и статуса') continue;
+                // создаем результирующий массив для добавления в лист Ожидают отправку
+                $result = [];
+                foreach ($expect_title as $item) {
+                    $is_write = false;
+                    if ($item === 'смена воронки и статуса') continue;
 
-                foreach ($selection_title as $title_key => $title_value) {
-                    if ($item !== $title_value) continue;
-                    $result[] = $value[$title_key];
-                    $is_write = true;
+                    foreach ($selection_title as $title_key => $title_value) {
+                        if ($item !== $title_value) continue;
+                        $result[] = $value[$title_key];
+                        $is_write = true;
+                    }
+
+                    // если ни один из столбцов листа Подбор не найден, пишем пустое значение
+                    if (!$is_write) $result[] = '';
                 }
 
-                // если ни один из столбцов листа Подбор не найден, пишем пустое значение
-                if (!$is_write) $result[] = '';
-            }
+                // добавляем новую строку в лист Ожидают отправку
+                isPause();
+                $value_range = new Google_Service_Sheets_ValueRange();
+                $value_range->setValues([$result]);
+                $options = ['valueInputOption' => 'USER_ENTERED'];
 
-            // добавляем новую строку в лист Ожидают отправку
-            isPause();
-            $value_range = new Google_Service_Sheets_ValueRange();
-            $value_range->setValues([$result]);
-            $options = ['valueInputOption' => 'USER_ENTERED'];
+                try {
+//                    $service->spreadsheets_values->append(
+//                        $sheet_ID, $sheet_title . '!A1:Z', $value_range, $options
+//                    );
+                    $service->spreadsheets_values->append(
+                        $sheet_ID, $sheet_title . '!A' . (count($list_expect['values']) + 1), $value_range, $options
+                    );
 
-            try {
-                $service->spreadsheets_values->append(
-                    $sheet_ID, $sheet_title . '!A1:Z', $value_range, $options
-                );
-                sleep(1);
-            } catch (Google_Service_Exception $exception) {
-                $reason = $exception->getErrors();
-                if ($reason) {
-                    if (file_exists('google_sheets/start')) unlink('google_sheets/start');
+                    sleep(1);
+                } catch (Google_Service_Exception $exception) {
+                    $reason = $exception->getErrors();
+                    if ($reason) {
+                        if (file_exists('google_sheets/start')) unlink('google_sheets/start');
+                    }
                 }
-            }
 
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
     }
 

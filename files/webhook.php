@@ -61,25 +61,35 @@
             $list = getValues($service, $sheet_ID, $sheet_title);
 
             // столбцы листа Подбор
-            foreach ($list['values'][0] as $key => $value) {
-                $value = mb_strtolower(trim(preg_replace('/\s+/', ' ', $value)));
+            try {
+                foreach ($list['values'][0] as $key => $value) {
+                    $value = mb_strtolower(trim(preg_replace('/\s+/', ' ', $value)));
 
-                // ID сделки и ссылка на сделку
-                if ($value === 'id сделки') {
-                    $row['id сделки'] = $lead_ID;
-                    $lead_key_ID = $key;
+                    // ID сделки и ссылка на сделку
+                    if ($value === 'id сделки') {
+                        $row['id сделки'] = $lead_ID;
+                        $lead_key_ID = $key;
+                    }
+                    if ($value === 'ссылка на сделку') $row['ссылка на сделку'] = $lead_link;
+
+                    // клиент всегда первый столбец
+                    if ($key === 0) $selection_title[] = 'клиент';
+                    else $selection_title[] = $value;
                 }
-                if ($value === 'ссылка на сделку') $row['ссылка на сделку'] = $lead_link;
-
-                // клиент всегда первый столбец
-                if ($key === 0) $selection_title[] = 'клиент';
-                else $selection_title[] = $value;
+            } catch (Google_Service_Exception $exception) {
+                $reason = $exception->getErrors();
+                if ($reason) continue;
             }
 
             // если такая сделка уже есть в таблице, новую не пишем
             $is_lead = false;
-            foreach ($list['values'] as $key => $value) {
-                if ($value[$lead_key_ID] === $lead_ID) $is_lead = true;
+            try {
+                foreach ($list['values'] as $key => $value) {
+                    if ($value[$lead_key_ID] === $lead_ID) $is_lead = true;
+                }
+            } catch (Google_Service_Exception $exception) {
+                $reason = $exception->getErrors();
+                if ($reason) continue;
             }
             if ($is_lead) continue;
 
@@ -183,8 +193,8 @@
             $value_range = new Google_Service_Sheets_ValueRange();
             $value_range->setValues([$result_row]);
             $options = ['valueInputOption' => 'USER_ENTERED'];
-            $service->spreadsheets_values->append(
-                $sheet_ID, $sheet_title . '!A1:Z', $value_range, $options
+            $service->spreadsheets_values->update(
+                $sheet_ID, $sheet_title . '!A' . (count($list['values']) + 1), $value_range, $options
             );
             sleep(1);
         }

@@ -76,9 +76,14 @@
         $list = getValues($service, $sheet_ID, $sheet_title);
 
         $is_list = false;
-        foreach ($list['values'][0] as $key => $item) {
-            $item = trim(preg_replace('/\s+/', ' ', $item));
-            if (mb_strtolower($item) === 'смена статуса всех сделок в листе') $is_list = true;
+        try {
+            foreach ($list['values'][0] as $key => $item) {
+                $item = trim(preg_replace('/\s+/', ' ', $item));
+                if (mb_strtolower($item) === 'смена статуса всех сделок в листе') $is_list = true;
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
         if (!$is_list) continue;
 
@@ -104,26 +109,42 @@
         }
 
         // определяем номер столбца с цифрой изменения сделки и ID сделки
-        foreach ($list['values'][0] as $key => $value) {
-            $value = mb_strtolower(trim(preg_replace('/\s+/', ' ', $value)));
+        try {
+            foreach ($list['values'][0] as $key => $value) {
+                $value = mb_strtolower(trim(preg_replace('/\s+/', ' ', $value)));
 
-            if ($value === 'id сделки') $container_lead_key = $key;
-            if ($value === 'смена статуса всех сделок в листе') $container_number_key = $key;
+                if ($value === 'id сделки') $container_lead_key = $key;
+                if ($value === 'смена статуса всех сделок в листе') $container_number_key = $key;
 
-            $container_title[] = $value;
+                $container_title[] = $value;
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
 
         // если цифра не стоит, пропускаем лист
         if (!$list['values'][1][$container_number_key] || (int) $list['values'][1][$container_number_key] !== 1) continue;
 
         // получаем данные с цифрой копирования в сделку
-        foreach ($list['values'] as $key => $value) {
-            if ($key === 0) continue;
-            $container_table[] = $value;
+        try {
+            foreach ($list['values'] as $key => $value) {
+                if ($key === 0) continue;
+                $container_table[] = $value;
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
 
         // ID существующих сделок для запроса
-        foreach ($list['values'] as $key => $value) { $IDs[] = $value[$container_lead_key]; }
+        try {
+            foreach ($list['values'] as $key => $value) { $IDs[] = $value[$container_lead_key]; }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
+        }
+
         try {
             $leads_IDs = $apiClient->leads()->get((new LeadsFilter())->setIds($IDs));
             usleep(20000);
@@ -256,12 +277,17 @@
 
         // обновляем строки на значение с цифрой 2
         $result = [];
-        foreach ($list['values'] as $key => $row) {
-            // если не первая строка и смена статуса с цифрой 1, меняем на 2, иначе просто перезаписываем
-            if ($key === 1 && (int) $row[$container_number_key] === 1) {
-                $result[] = 2;
-            } else if ($row[$container_number_key]) $result[] = $row[$container_number_key];
-            else $result[] = 'null';
+        try {
+            foreach ($list['values'] as $key => $row) {
+                // если не первая строка и смена статуса с цифрой 1, меняем на 2, иначе просто перезаписываем
+                if ($key === 1 && (int) $row[$container_number_key] === 1) {
+                    $result[] = 2;
+                } else if ($row[$container_number_key]) $result[] = $row[$container_number_key];
+                else $result[] = 'null';
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
 
         $result_row = [];

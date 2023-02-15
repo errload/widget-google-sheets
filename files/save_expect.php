@@ -42,17 +42,28 @@
         }
 
         // определяем номер столбца с цифрой изменения сделки и ID сделки
-        foreach ($list['values'][0] as $key => $value) {
-            $value = mb_strtolower(trim(preg_replace('/\s+/', ' ', $value)));
+        try {
+            foreach ($list['values'][0] as $key => $value) {
+                $value = mb_strtolower(trim(preg_replace('/\s+/', ' ', $value)));
 
-            if ($value === 'id сделки') $expect_lead_key = $key;
-            if ($value === 'смена воронки и статуса') $expect_number_key = $key;
+                if ($value === 'id сделки') $expect_lead_key = $key;
+                if ($value === 'смена воронки и статуса') $expect_number_key = $key;
 
-            $expect_title[] = $value;
+                $expect_title[] = $value;
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
 
         // ID существующих сделок для запроса
-        foreach ($list['values'] as $key => $value) { $IDs[] = $value[$expect_lead_key]; }
+        try {
+            foreach ($list['values'] as $key => $value) { $IDs[] = $value[$expect_lead_key]; }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
+        }
+
         try {
             $leads_IDs = $apiClient->leads()->get((new LeadsFilter())->setIds($IDs));
             usleep(20000);
@@ -61,11 +72,16 @@
         if ($leads_IDs) foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
 
         // получаем данные с цифрой копирования в сделку
-        foreach ($list['values'] as $key => $value) {
-            if ($key === 0) continue;
-            if (!$value[$expect_number_key] || (int) $value[$expect_number_key] !== 1) continue;
+        try {
+            foreach ($list['values'] as $key => $value) {
+                if ($key === 0) continue;
+                if (!$value[$expect_number_key] || (int) $value[$expect_number_key] !== 1) continue;
 
-            $expect_table[] = $value;
+                $expect_table[] = $value;
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
 
         // если нет подходящих записей, выходим
@@ -230,16 +246,21 @@
 
         // обновляем строки на значение с цифрой 2
         $result = [];
-        foreach ($list['values'] as $key => $row) {
-            // если не первая строка и смена статуса с цифрой 1, меняем на 2, иначе просто перезаписываем
-            if ($key === 0) $result[] = $row[$expect_number_key];
-            else if ((int) $row[$expect_number_key] === 1 &&
-                // и сделка обновилась
-                in_array($row[$expect_lead_key], $leads_edit)) {
+        try {
+            foreach ($list['values'] as $key => $row) {
+                // если не первая строка и смена статуса с цифрой 1, меняем на 2, иначе просто перезаписываем
+                if ($key === 0) $result[] = $row[$expect_number_key];
+                else if ((int) $row[$expect_number_key] === 1 &&
+                    // и сделка обновилась
+                    in_array($row[$expect_lead_key], $leads_edit)) {
 
-                $result[] = 2;
-            } else if ($row[$expect_number_key]) $result[] = $row[$expect_number_key];
-            else $result[] = 'null';
+                    $result[] = 2;
+                } else if ($row[$expect_number_key]) $result[] = $row[$expect_number_key];
+                else $result[] = 'null';
+            }
+        } catch (Google_Service_Exception $exception) {
+            $reason = $exception->getErrors();
+            if ($reason) continue;
         }
 
         $result_row = [];
