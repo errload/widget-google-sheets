@@ -152,6 +152,7 @@
             // остальные листы
             } else {
                 $list = getValues($service, $sheet_ID, $sheet_title);
+                if (!$list['values'][0]) continue;
 
                 // проверка на соответствие листа
                 $is_list = false;
