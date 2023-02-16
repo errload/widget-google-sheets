@@ -2,15 +2,6 @@
     // если виджет не установлен, выходим
     if (!file_exists('install')) return;
 
-    // если открыты настройки ждем пока завершат реквесты
-    while (file_exists('start_settings')) sleep(5);
-
-    // ставим паузу для других реквестов
-    while (file_exists('start_hook')) sleep(5);
-    file_put_contents('pause', '');
-    file_put_contents('start_hook', '');
-    sleep(1);
-
     use AmoCRM\Exceptions\AmoCRMApiException;
 
     include_once __DIR__ . '/../../api_google/vendor/autoload.php';
@@ -51,6 +42,15 @@
             if (file_exists('start_hook')) unlink('start_hook');
             return;
         }
+
+        // если открыты настройки ждем пока завершат реквесты
+        while (file_exists('start_settings')) sleep(5);
+
+        // ставим паузу для других реквестов
+        while (file_exists('start_hook')) sleep(5);
+        file_put_contents('pause', '');
+        file_put_contents('start_hook', '');
+        sleep(1);
 
         // лист Подбор
         foreach ($response->getSheets() as $sheet) {
@@ -198,8 +198,8 @@
             );
             sleep(1);
         }
-    }
 
-    // удаляем файлы паузы и хука
-    if (file_exists('pause')) unlink('pause');
-    if (file_exists('start_hook')) unlink('start_hook');
+        // удаляем файлы паузы и хука
+        if (file_exists('pause')) unlink('pause');
+        if (file_exists('start_hook')) unlink('start_hook');
+    }

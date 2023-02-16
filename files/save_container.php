@@ -34,7 +34,7 @@
         usleep(20000);
     } catch (AmoCRMApiException $e) {}
 
-    if ($customFields->count()) $fields_count = true;
+    if ($customFields) $fields_count = true;
     while ($fields_count) {
         foreach ($customFields as $customField) {
             $class = explode('\\', get_class($customField));
@@ -74,6 +74,7 @@
 
         isPause();
         $list = getValues($service, $sheet_ID, $sheet_title);
+        if (!$list['values'][0]) continue;
 
         $is_list = false;
         try {
