@@ -1,10 +1,10 @@
 <?php
     // если виджет не установлен, выходим
     if (!file_exists('install')) return;
-    sleep(1);
 
     use AmoCRM\Exceptions\AmoCRMApiException;
 
+    ini_set('error_log', 'error_in_webhook.log');
     include_once __DIR__ . '/../../api_google/vendor/autoload.php';
     include_once 'google_config.php';
 
@@ -19,6 +19,7 @@
     $result_row = []; // результирующий массив для записи в таблицу
     $lead_key_ID = null; // номер столбца с ID сделки
     $sheet_title = 'подбор';
+    $is_lead = false; // проверка наличия сделки в листе
 
     // данные по webhook
     if (!$_POST['leads']['status'][0]['id']) return;
@@ -67,13 +68,12 @@
     } catch (Google_Service_Exception $exception) {
         $reason = $exception->getErrors();
         if ($reason) {
-            if (file_exists('pause')) unlink('pause');
+            deletePause();
             return;
         }
     }
 
     // если такая сделка уже есть в таблице, новую не пишем
-    $is_lead = false;
     try {
         foreach ($list['values'] as $key => $value) {
             if ((int) $value[$lead_key_ID] === (int) $lead_ID) $is_lead = true;
@@ -81,14 +81,13 @@
     } catch (Google_Service_Exception $exception) {
         $reason = $exception->getErrors();
         if ($reason) {
-            if (file_exists('pause')) unlink('pause');
+            deletePause();
             return;
         }
     }
 
     if ($is_lead) {
-        // удаляем файл паузы
-        if (file_exists('pause')) unlink('pause');
+        deletePause();
         return;
     }
 
@@ -96,13 +95,19 @@
     if (file_exists('selection.json')) {
         $files = file_get_contents('selection.json');
         $files = json_decode($files, true);
-        foreach ($files as $file) { foreach ($file as $key => $value) { $selection_file[$key] = $value; }}
+
+        foreach ($files as $file) {
+            foreach ($file as $key => $value) {
+                $selection_file[$key] = $value;
+            }
+        }
     }
 
     // контакты
     if ($lead_info->getContacts()) {
         // основной контакт
         $contact_ID = $lead_info->getMainContact()->getId();
+
         try {
             $contact = $apiClient->contacts()->getOne((int) $contact_ID);
             usleep(20000);
@@ -160,10 +165,12 @@
 
     // ответственный
     $manager_ID = $lead_info->getResponsibleUserId();
+
     try {
         $manager = $apiClient->users()->getOne((int) $manager_ID)->getName();
         usleep(20000);
     } catch (AmoCRMApiException $e) {}
+
     $row['менеджер'] = $manager;
 
     // поля сделки
@@ -185,17 +192,29 @@
     // результирующий массив
     foreach ($selection_title as $item) {
         if (!$row[$item] && $row[$item] !== 0) $result_row[] = '';
-        foreach ($row as $key => $value) { if ($item === $key) $result_row[] = $value; }
+
+        foreach ($row as $key => $value) {
+            if ($item === $key) $result_row[] = $value;
+        }
     }
 
     // запись в таблицу
     $value_range = new Google_Service_Sheets_ValueRange();
     $value_range->setValues([$result_row]);
     $options = ['valueInputOption' => 'USER_ENTERED'];
-    $service->spreadsheets_values->append(
-        $sheet_ID, $sheet_title . '!A' . (count($list['values']) + 1), $value_range, $options
-    );
-    sleep(1);
+
+    try {
+        $service->spreadsheets_values->append(
+            $sheet_ID, $sheet_title . '!A' . (count($list['values']) + 1), $value_range, $options
+        );
+        sleep(1);
+    } catch (Google_Service_Exception $exception) {
+        $reason = $exception->getErrors();
+        if ($reason) {
+            deletePause();
+            return;
+        }
+    }
 
     // удаляем файл паузы
-    if (file_exists('pause')) unlink('pause');
+    deletePause();

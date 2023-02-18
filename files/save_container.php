@@ -315,5 +315,4 @@
         }
     }
 
-    if (file_exists('google_sheets/step3')) unlink('google_sheets/step3');
-    if (file_exists('google_sheets/start')) unlink('google_sheets/start');
+    if (file_exists('start')) unlink('start');

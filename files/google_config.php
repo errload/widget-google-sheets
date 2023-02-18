@@ -1,5 +1,7 @@
 <?php
     include_once 'config.php';
+    $domain = 'integratortechaccount';
+//    $domain = 'projapan';
 
     $Config = new Config();
     $Config->GetSettings('integratortechaccount.amocrm.ru');
@@ -37,11 +39,10 @@
 
     // проверка паузы
     function isPause() {
-        while (file_exists('google_sheets/pause')) sleep(1);
+        while (file_exists('pause')) sleep(1);
     }
 
-    // обнуление файлов
-    function nullStart() {
-        if (file_exists('google_sheets/step2')) unlink('google_sheets/step2');
-        if (file_exists('google_sheets/step3')) unlink('google_sheets/step3');
+    // удаление паузы
+    function deletePause() {
+        while (file_exists('pause')) unlink('pause');
     }

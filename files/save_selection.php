@@ -2,7 +2,7 @@
     // если виджет не установлен, выходим
     if (!file_exists('install')) return;
     // запускаем файлы проверки
-    file_put_contents('google_sheets/start', '');
+    file_put_contents('start', '');
 
     use AmoCRM\Exceptions\AmoCRMApiException;
     use AmoCRM\Filters\LeadsFilter;
@@ -11,7 +11,7 @@
     include_once 'google_config.php';
 
     /* ###################################################################### */
-
+/*
     $pipeline_ID = 6001285; // воронка Логистика (integratortechaccount)
     $status_ID = 52185676; // статус Заполнение контейнера (integratortechaccount)
     $user_ID = 8981790; // ID пользователя (integratortechaccount)
@@ -27,7 +27,6 @@
     $selection_title = []; // столбцы листа Подбор
     $expect_title = []; // столбцы листа Ожидают отправку
     $list = []; // массив строк листа
-    $leads_move = []; // массив сделок, поменявших статус, но не перенесенных на другой лист
 
     foreach ($response->getSheets() as $sheet) {
         isPause();
@@ -109,7 +108,7 @@
 
     // если по какой-то причине сделки не сменили статус и массив пуст, выходим
     if (!count($leads_edit)) {
-        file_put_contents('google_sheets/step2', '');
+        exec('php ' . __DIR__ . '/save_expect.php ' . $domain . '.amocrm.ru' . ' &> /dev/null &');
         return;
     }
 
@@ -174,8 +173,8 @@
                 } catch (Google_Service_Exception $exception) {
                     $reason = $exception->getErrors();
                     if ($reason) {
-                        $leads_move[] = $value[$lead_ID];
-                        continue;
+                        exec('php ' . __DIR__ . '/save_expect.php ' . $domain . '.amocrm.ru' . ' &> /dev/null &');
+                        return false;
                     }
                 }
 
@@ -191,8 +190,6 @@
         if (!$list['values'][$i][$number_ID] || (int) $list['values'][$i][$number_ID] !== 1) continue;
         // если сделка не поменяла статус, не переносим
         if (!in_array($list['values'][$i][$lead_ID], $leads_edit)) continue;
-        // если сделка поменяла статус, но не перенеслась, не удаляем
-        if (!in_array($list['values'][$i][$lead_ID], $leads_move)) continue;
 
         $requests = [
             new Google_Service_Sheets_Request([
@@ -218,5 +215,5 @@
         }
     }
 
-    file_put_contents('google_sheets/step2', '');
-
+    exec('php ' . __DIR__ . '/save_expect.php ' . $domain . '.amocrm.ru' . ' &> /dev/null &');
+*/

@@ -88,8 +88,7 @@
 
         // если нет подходящих записей, выходим
         if (!count($expect_table)) {
-            if (file_exists('google_sheets/step2')) unlink('google_sheets/step2');
-            file_put_contents('google_sheets/step3', '');
+            exec('php ' . __DIR__ . '/save_container.php ' . $domain . '.amocrm.ru' . ' &> /dev/null &');
             continue;
         }
 
@@ -288,6 +287,6 @@
             if ($reason) continue;
         }
 
-        if (file_exists('google_sheets/step2')) unlink('google_sheets/step2');
-        file_put_contents('google_sheets/step3', '');
+        exec('php ' . __DIR__ . '/save_container.php ' . $domain . '.amocrm.ru' . ' &> /dev/null &');
+        break;
     }
