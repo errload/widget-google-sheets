@@ -39,6 +39,11 @@
         return $list;
     }
 
+    // удаление паузы
+    function deletePause() {
+        while (file_exists('pause')) unlink('pause');
+    }
+
     $Config = new Config();
 
     if ($_POST['method'] == 'settings') {
@@ -85,14 +90,18 @@
 
         // поля сделок
         $customFieldsService = $apiClient->customFields(EntityTypesInterface::LEADS);
+
         try {
             $fields = $customFieldsService->get();
             usleep(20000);
         } catch (AmoCRMApiException $e) {}
 
         if ($fields->count() > 0) $fields_count = true;
+
         while ($fields_count) {
-            foreach ($fields as $field) { $settings['fields_leads'][] = [$field->getId(), $field->getName()]; }
+            foreach ($fields as $field) {
+                $settings['fields_leads'][] = [$field->getId(), $field->getName()];
+            }
 
             if ($fields->getNextPageLink()) {
                 try {
@@ -105,14 +114,18 @@
 
         // поля контактов
         $customFieldsService = $apiClient->customFields(EntityTypesInterface::CONTACTS);
+
         try {
             $fields = $customFieldsService->get();
             usleep(20000);
         } catch (AmoCRMApiException $e) {}
 
         if ($fields->count() > 0) $fields_count = true;
+
         while ($fields_count) {
-            foreach ($fields as $field) { $settings['fields_contacts'][] = [$field->getId(), $field->getName()]; }
+            foreach ($fields as $field) {
+                $settings['fields_contacts'][] = [$field->getId(), $field->getName()];
+            }
 
             if ($fields->getNextPageLink()) {
                 try {
@@ -140,6 +153,7 @@
                     $item = trim(preg_replace('/\s+/', ' ', $item));
                     $settings['selection'][] = $item;
                 }
+
             // Ожидают отправку
             } else if ($sheet_title === 'ожидают отправку') {
                 $list = getValues($service, $sheet_ID, $sheet_title);
@@ -148,23 +162,43 @@
                     $item = trim(preg_replace('/\s+/', ' ', $item));
                     $settings['expect'][] = $item;
                 }
-            // остальные листы
+
+            // листы контейнеров
             } else {
                 $list = getValues($service, $sheet_ID, $sheet_title);
+
                 if (!$list['values'][0]) continue;
 
                 // проверка на соответствие листа
                 $is_list = false;
-                foreach ($list['values'][0] as $key => $item) {
-                    $item = trim(preg_replace('/\s+/', ' ', $item));
-                    if (mb_strtolower($item) === 'смена статуса всех сделок в листе') $is_list = true;
+
+                try {
+                    foreach ($list['values'][0] as $key => $item) {
+                        $item = trim(preg_replace('/\s+/', ' ', $item));
+                        if (mb_strtolower($item) === 'смена статуса всех сделок в листе') $is_list = true;
+                    }
+                } catch (Google_Service_Exception $exception) {
+                    $reason = $exception->getErrors();
+                    if ($reason) {
+                        deletePause();
+                        continue;
+                    }
                 }
+
                 if (!$is_list) continue;
 
-                foreach ($list['values'][0] as $key => $item) {
-                    if ($key === 0 && $is_client === true) continue;
-                    $item = trim(preg_replace('/\s+/', ' ', $item));
-                    $container[] = $item;
+                try {
+                    foreach ($list['values'][0] as $key => $item) {
+                        if ($key === 0 && $is_client === true) continue;
+                        $item = trim(preg_replace('/\s+/', ' ', $item));
+                        $container[] = $item;
+                    }
+                } catch (Google_Service_Exception $exception) {
+                    $reason = $exception->getErrors();
+                    if ($reason) {
+                        deletePause();
+                        continue;
+                    }
                 }
             }
         }
@@ -189,10 +223,8 @@
             $settings['container_JSON'] = json_decode($file, true);
         }
 
-        // удаляем файлы паузы и настроек
-        if (file_exists('start_settings')) unlink('start_settings');
-        if (file_exists('pause')) unlink('pause');
-
+        // удаляем файл паузы
+        deletePause();
         print_r(json_encode($settings));
     }
 
@@ -210,7 +242,10 @@
             if (file_exists('selection.json')) unlink('selection.json');
         }
         else {
-            foreach ($fields_selection as $item) { $selection[] = [$item['title'] => $item['code']]; }
+            foreach ($fields_selection as $item) {
+                $selection[] = [$item['title'] => $item['code']];
+            }
+
             file_put_contents('selection.json', json_encode($selection));
         }
 
@@ -218,7 +253,10 @@
             if (file_exists('expect.json')) unlink('expect.json');
         }
         else {
-            foreach ($fields_expect as $item) { $expect[] = [$item['title'] => $item['code']]; }
+            foreach ($fields_expect as $item) {
+                $expect[] = [$item['title'] => $item['code']];
+            }
+
             file_put_contents('expect.json', json_encode($expect));
         }
 
@@ -226,7 +264,10 @@
             if (file_exists('container.json')) unlink('container.json');
         }
         else {
-            foreach ($fields_container as $item) { $container[] = [$item['title'] => $item['code']]; }
+            foreach ($fields_container as $item) {
+                $container[] = [$item['title'] => $item['code']];
+            }
+
             file_put_contents('container.json', json_encode($container));
         }
     }
@@ -235,6 +276,7 @@
     if ($_POST['method'] == 'saveLinkVK' && $Config->CheckToken()) {
         $link = $_POST['link'];
         $contact_ID = $_POST['contact_ID'];
+
         if (!$link || !$contact_ID) return;
 
         include 'db_connect.php';
@@ -255,6 +297,7 @@
         ';
 
         $result = $mysqli->query($select);
+
         if (!$result->num_rows) $mysqli->query($insert);
     }
 

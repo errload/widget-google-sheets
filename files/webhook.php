@@ -1,12 +1,12 @@
 <?php
+    use AmoCRM\Exceptions\AmoCRMApiException;
+
     // если виджет не установлен, выходим
     if (!file_exists('install')) return;
 
-    use AmoCRM\Exceptions\AmoCRMApiException;
-
-    ini_set('error_log', 'error_in_webhook.log');
     include_once __DIR__ . '/../../api_google/vendor/autoload.php';
     include_once 'google_config.php';
+    ini_set('error_log', 'error_in_webhook.log');
 
     /* ###################################################################### */
 
@@ -69,7 +69,7 @@
         $reason = $exception->getErrors();
         if ($reason) {
             deletePause();
-            return;
+            exit;
         }
     }
 
@@ -82,13 +82,13 @@
         $reason = $exception->getErrors();
         if ($reason) {
             deletePause();
-            return;
+            exit;
         }
     }
 
     if ($is_lead) {
         deletePause();
-        return;
+        exit;
     }
 
     // поля из файла настроек виджета
@@ -212,7 +212,7 @@
         $reason = $exception->getErrors();
         if ($reason) {
             deletePause();
-            return;
+            exit;
         }
     }
 

@@ -1,5 +1,7 @@
 <?php
     include_once 'config.php';
+    ini_set('error_log', 'error_in_google_config.log');
+
     $domain = 'integratortechaccount';
 //    $domain = 'projapan';
 
