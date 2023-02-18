@@ -1,5 +1,4 @@
 <?php
-
     include_once 'config.php';
 
     $Config = new Config();
@@ -15,9 +14,8 @@
     $google->useApplicationDefaultCredentials();
     $google->addScope('https://www.googleapis.com/auth/spreadsheets');
     $service = new Google_Service_Sheets($google);
-//    $sheet_ID = '1pMraZ5_whYqLIWOo8BBJb-Fhfk8rAxwfv7T-GZ2Jx_g';
 //    $sheet_ID = '15QV9CeDMPNhsbRHyJlIXi95ZFOUQKyCCxyqIpLZl6MU';
-    $sheet_ID = '1FeotL7N1IFPjfz7ACJHsXHH5Tjs3NWhjnApsKkGFC3A';
+    $sheet_ID = '1PqMkFgBF6G1UY5pJ1svKjUqKSUeeqX8Wh-wUU9wmkO8';
     $response = $service->spreadsheets->get($sheet_ID);
     sleep(1);
 
@@ -39,7 +37,7 @@
 
     // проверка паузы
     function isPause() {
-        while (file_exists('google_sheets/pause')) sleep(5);
+        while (file_exists('google_sheets/pause')) sleep(1);
     }
 
     // обнуление файлов

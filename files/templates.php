@@ -18,9 +18,8 @@
     $google->useApplicationDefaultCredentials();
     $google->addScope('https://www.googleapis.com/auth/spreadsheets');
     $service = new Google_Service_Sheets($google);
-//    $sheet_ID = '1pMraZ5_whYqLIWOo8BBJb-Fhfk8rAxwfv7T-GZ2Jx_g';
 //    $sheet_ID = '15QV9CeDMPNhsbRHyJlIXi95ZFOUQKyCCxyqIpLZl6MU';
-    $sheet_ID = '1FeotL7N1IFPjfz7ACJHsXHH5Tjs3NWhjnApsKkGFC3A';
+    $sheet_ID = '1PqMkFgBF6G1UY5pJ1svKjUqKSUeeqX8Wh-wUU9wmkO8';
     $response = $service->spreadsheets->get($sheet_ID);
     sleep(1);
 
@@ -73,15 +72,15 @@
 
     // список столбцов контейнеров с гугл таблицы
     if ($_POST['method'] == 'showSettingsJSON' && $Config->CheckToken()) {
+        // если виджет не установлен, выходим
+        if (!file_exists('install')) return;
+
         $settings = [];
 
-        // если был отправлен хук, ждем пока завершит реквесты
-        while (file_exists('start_hook')) sleep(5);
-
+        // если открыты настройки ждем пока завершат реквесты
+        while (file_exists('pause')) sleep(1);
         // ставим паузу для других реквестов
-        while (file_exists('start_settings')) sleep(5);
         file_put_contents('pause', '');
-        file_put_contents('start_settings', '');
         sleep(1);
 
         // поля сделок
@@ -191,8 +190,8 @@
         }
 
         // удаляем файлы паузы и настроек
-        if (file_exists('pause')) unlink('pause');
         if (file_exists('start_settings')) unlink('start_settings');
+        if (file_exists('pause')) unlink('pause');
 
         print_r(json_encode($settings));
     }
@@ -262,11 +261,9 @@
     // create install widget
     if ($_POST['method'] == 'widget_status' && $Config->CheckToken()) {
         if ($_POST['status'] === 'install') {
-            if (file_exists('install')) return;
-            file_put_contents('install', '');
+            if (!file_exists('install')) file_put_contents('install', '');
         } else if ($_POST['status'] === 'destroy') {
-            if (!file_exists('install')) return;
-            unlink('install');
+            if (file_exists('install')) unlink('install');
         }
     }
 

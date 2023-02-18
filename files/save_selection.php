@@ -1,4 +1,6 @@
 <?php
+    // если виджет не установлен, выходим
+    if (!file_exists('install')) return;
     // запускаем файлы проверки
     file_put_contents('google_sheets/start', '');
 
@@ -25,6 +27,7 @@
     $selection_title = []; // столбцы листа Подбор
     $expect_title = []; // столбцы листа Ожидают отправку
     $list = []; // массив строк листа
+    $leads_move = []; // массив сделок, поменявших статус, но не перенесенных на другой лист
 
     foreach ($response->getSheets() as $sheet) {
         isPause();
@@ -69,7 +72,8 @@
         } catch (AmoCRMApiException $e) {}
 
         $IDs = [];
-        if ($leads_IDs) foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
+        if (!$leads_IDs) continue;
+        foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
 
         // проверяем построчно сделки кроме первой (заголовка)
         try {
@@ -162,9 +166,6 @@
                 $options = ['valueInputOption' => 'USER_ENTERED'];
 
                 try {
-//                    $service->spreadsheets_values->append(
-//                        $sheet_ID, $sheet_title . '!A1:Z', $value_range, $options
-//                    );
                     $service->spreadsheets_values->append(
                         $sheet_ID, $sheet_title . '!A' . (count($list_expect['values']) + 1), $value_range, $options
                     );
@@ -173,7 +174,8 @@
                 } catch (Google_Service_Exception $exception) {
                     $reason = $exception->getErrors();
                     if ($reason) {
-                        if (file_exists('google_sheets/start')) unlink('google_sheets/start');
+                        $leads_move[] = $value[$lead_ID];
+                        continue;
                     }
                 }
 
@@ -184,12 +186,13 @@
         }
     }
 
-    // удаляем перенесенные строки
     for ($i = count($list['values']) - 1; $i > 0; $i--) {
         // если нет поля для цифры или она не стоит, пропускаем
         if (!$list['values'][$i][$number_ID] || (int) $list['values'][$i][$number_ID] !== 1) continue;
         // если сделка не поменяла статус, не переносим
         if (!in_array($list['values'][$i][$lead_ID], $leads_edit)) continue;
+        // если сделка поменяла статус, но не перенеслась, не удаляем
+        if (!in_array($list['values'][$i][$lead_ID], $leads_move)) continue;
 
         $requests = [
             new Google_Service_Sheets_Request([
@@ -211,11 +214,9 @@
             sleep(1);
         } catch (Google_Service_Exception $exception) {
             $reason = $exception->getErrors();
-            if ($reason) {
-                if (file_exists('google_sheets/start')) unlink('google_sheets/start');
-            }
+            if ($reason) continue;
         }
-
-        file_put_contents('google_sheets/step2', '');
     }
+
+    file_put_contents('google_sheets/step2', '');
 

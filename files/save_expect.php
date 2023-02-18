@@ -69,7 +69,9 @@
             usleep(20000);
         } catch (AmoCRMApiException $e) {}
         $IDs = [];
-        if ($leads_IDs) foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
+
+        if (!$leads_IDs) continue;
+        foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
 
         // получаем данные с цифрой копирования в сделку
         try {
@@ -88,7 +90,7 @@
         if (!count($expect_table)) {
             if (file_exists('google_sheets/step2')) unlink('google_sheets/step2');
             file_put_contents('google_sheets/step3', '');
-            return;
+            continue;
         }
 
         // перебор полученных строк с таблицы
@@ -283,7 +285,7 @@
             sleep(1);
         } catch (Google_Service_Exception $exception) {
             $reason = $exception->getErrors();
-            if ($reason) nullStart();
+            if ($reason) continue;
         }
 
         if (file_exists('google_sheets/step2')) unlink('google_sheets/step2');

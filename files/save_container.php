@@ -14,11 +14,19 @@
     /* ###################################################################### */
 
     $pipeline_ID = 6001285; // воронка Логистика (integratortechaccount)
-
 //    $pipeline_ID = 606067; // воронка Логистика
+
     $container_file = []; // поля с файла
     $fields = []; // поля сделок
     $fields_contacts = []; // поля контактов
+    $IDs = []; // ID существующих сделок для запроса
+    $container_number_key = null; // номер столбца смены статуса и воронки
+    $container_lead_key = null; // номер столбца ID сделки
+    $container_title = []; // массив заголовков таблицы
+    $container_table = []; // массив строк таблицы
+    $leads = []; // сделки с полями
+    $leads_edit = []; // ID сделок для изменения цифры
+    $status_ID = null;
 
     // берем значения полей из файла настроек виджета
     if (file_exists('google_sheets/container.json')) {
@@ -87,15 +95,6 @@
             if ($reason) continue;
         }
         if (!$is_list) continue;
-
-        $IDs = []; // ID существующих сделок для запроса
-        $container_number_key = null; // номер столбца смены статуса и воронки
-        $container_lead_key = null; // номер столбца ID сделки
-        $container_title = []; // массив заголовков таблицы
-        $container_table = []; // массив строк таблицы
-        $leads = []; // сделки с полями
-        $leads_edit = []; // ID сделок для изменения цифры
-        $status_ID = null;
 
         // находим ID статуса по названию листа
         try {
@@ -189,6 +188,7 @@
                 $lead_info = $apiClient->leads()->getOne((int) $ID, ['contacts']);
                 usleep(20000);
             } catch (AmoCRMApiException $e) {}
+            if (!$lead_info) continue;
 
             // коллекция полей сделки
             $customFields = null;
@@ -311,7 +311,7 @@
             sleep(1);
         } catch (Google_Service_Exception $exception) {
             $reason = $exception->getErrors();
-            if ($reason) nullStart();
+            if ($reason) continue;
         }
     }
 
