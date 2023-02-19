@@ -10,6 +10,7 @@
 
     include_once __DIR__ . '/../../api_google/vendor/autoload.php';
     include_once 'google_config.php';
+    ini_set('error_log', 'error_in_save_container.log');
 
     /* ###################################################################### */
 
@@ -32,10 +33,16 @@
     if (file_exists('google_sheets/container.json')) {
         $files = file_get_contents('google_sheets/container.json');
         $files = json_decode($files, true);
-        foreach ($files as $file) { foreach ($file as $key => $value) { $container_file[$key] = $value; }}
+
+        foreach ($files as $file) {
+            foreach ($file as $key => $value) {
+                $container_file[$key] = $value;
+            }
+        }
     }
 
     // перебираем поля сделок для определения типа поля
+    isPause();
     $customFieldsLeads = $apiClient->customFields(EntityTypesInterface::LEADS);
     try {
         $customFields = $customFieldsLeads->get();
@@ -43,6 +50,7 @@
     } catch (AmoCRMApiException $e) {}
 
     if ($customFields) $fields_count = true;
+
     while ($fields_count) {
         foreach ($customFields as $customField) {
             $class = explode('\\', get_class($customField));
@@ -60,6 +68,7 @@
     }
 
     // перебираем поля контактов для определения типа поля
+    isPause();
     $customFieldsContacts = $apiClient->customFields(EntityTypesInterface::CONTACTS);
     try {
         $customFields = $customFieldsContacts->get();
@@ -72,6 +81,7 @@
         $fields_contacts[] = [$customField->getId(), $class];
     }
 
+    // перебираем листы таблицы для поиска обновляемых контейнеров
     foreach ($response->getSheets() as $sheet) {
         isPause();
         $sheet_title = $sheet->getProperties()->title;
@@ -82,9 +92,13 @@
 
         isPause();
         $list = getValues($service, $sheet_ID, $sheet_title);
+        // если нет первой строки (заголовка), пропускаем
         if (!$list['values'][0]) continue;
 
+        // если в заголовках нет столбца смены статуса, пропускаем
         $is_list = false;
+        isPause();
+
         try {
             foreach ($list['values'][0] as $key => $item) {
                 $item = trim(preg_replace('/\s+/', ' ', $item));
@@ -94,9 +108,11 @@
             $reason = $exception->getErrors();
             if ($reason) continue;
         }
+
         if (!$is_list) continue;
 
         // находим ID статуса по названию листа
+        isPause();
         try {
             $pipelines = $apiClient->pipelines()->getOne($pipeline_ID)->getStatuses();
             usleep(20000);
@@ -109,6 +125,7 @@
         }
 
         // определяем номер столбца с цифрой изменения сделки и ID сделки
+        isPause();
         try {
             foreach ($list['values'][0] as $key => $value) {
                 $value = mb_strtolower(trim(preg_replace('/\s+/', ' ', $value)));
@@ -127,6 +144,7 @@
         if (!$list['values'][1][$container_number_key] || (int) $list['values'][1][$container_number_key] !== 1) continue;
 
         // получаем данные с цифрой копирования в сделку
+        isPause();
         try {
             foreach ($list['values'] as $key => $value) {
                 if ($key === 0) continue;
@@ -137,23 +155,32 @@
             if ($reason) continue;
         }
 
+        // если нет подходящих записей, пропускаем
+        if (!count($container_table)) continue;
+
         // ID существующих сделок для запроса
+        isPause();
         try {
-            foreach ($list['values'] as $key => $value) { $IDs[] = $value[$container_lead_key]; }
+            foreach ($list['values'] as $key => $value) {
+                $IDs[] = $value[$container_lead_key];
+            }
         } catch (Google_Service_Exception $exception) {
             $reason = $exception->getErrors();
             if ($reason) continue;
         }
 
+        isPause();
         try {
             $leads_IDs = $apiClient->leads()->get((new LeadsFilter())->setIds($IDs));
             usleep(20000);
         } catch (AmoCRMApiException $e) {}
-        $IDs = [];
-        foreach ($leads_IDs as $lead) { $IDs[] = $lead->getId(); }
 
-        // если нет подходящих записей, выходим
-        if (!count($container_table)) continue;
+        if (is_null($leads_IDs)) continue;
+        $IDs = [];
+
+        foreach ($leads_IDs as $lead) {
+            $IDs[] = $lead->getId();
+        }
 
         // перебор полученных строк с таблицы
         foreach ($container_table as $rows) {
@@ -179,7 +206,11 @@
         }
 
         // перебираем полученные сделки и меняем в них значения полей
+        if (!count($leads)) continue;
+
         foreach ($leads as $ID => $lead) {
+            isPause();
+
             // если такой сделки не существует, пропускаем
             if (!in_array($ID, $IDs)) continue;
 
@@ -188,6 +219,7 @@
                 $lead_info = $apiClient->leads()->getOne((int) $ID, ['contacts']);
                 usleep(20000);
             } catch (AmoCRMApiException $e) {}
+
             if (!$lead_info) continue;
 
             // коллекция полей сделки
@@ -278,6 +310,8 @@
 
         // обновляем строки на значение с цифрой 2
         $result = [];
+        isPause();
+
         try {
             foreach ($list['values'] as $key => $row) {
                 // если не первая строка и смена статуса с цифрой 1, меняем на 2, иначе просто перезаписываем
@@ -316,3 +350,4 @@
     }
 
     if (file_exists('start')) unlink('start');
+    exit;
