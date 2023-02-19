@@ -15,8 +15,7 @@
 
     // переход к следующему шагу
     function goToStep() {
-//        exec('php ' . __DIR__ . '/save_expect.php ' . $domain . '.amocrm.ru' . ' &> /dev/null &');
-        if (file_exists('start')) unlink('start');
+        exec('php ' . __DIR__ . '/save_expect.php ' . $domain . '.amocrm.ru' . ' &> /dev/null &');
         exit;
     }
 
