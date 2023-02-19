@@ -149,18 +149,34 @@
             if ($sheet_title === 'подбор') {
                 $list = getValues($service, $sheet_ID, $sheet_title);
 
-                foreach ($list['values'][0] as $key => $item) {
-                    $item = trim(preg_replace('/\s+/', ' ', $item));
-                    $settings['selection'][] = $item;
+                try {
+                    foreach ($list['values'][0] as $key => $item) {
+                        $item = trim(preg_replace('/\s+/', ' ', $item));
+                        $settings['selection'][] = $item;
+                    }
+                } catch (Google_Service_Exception $exception) {
+                    $reason = $exception->getErrors();
+                    if ($reason) {
+                        deletePause();
+                        continue;
+                    }
                 }
 
             // Ожидают отправку
             } else if ($sheet_title === 'ожидают отправку') {
                 $list = getValues($service, $sheet_ID, $sheet_title);
 
-                foreach ($list['values'][0] as $key => $item) {
-                    $item = trim(preg_replace('/\s+/', ' ', $item));
-                    $settings['expect'][] = $item;
+                try {
+                    foreach ($list['values'][0] as $key => $item) {
+                        $item = trim(preg_replace('/\s+/', ' ', $item));
+                        $settings['expect'][] = $item;
+                    }
+                } catch (Google_Service_Exception $exception) {
+                    $reason = $exception->getErrors();
+                    if ($reason) {
+                        deletePause();
+                        continue;
+                    }
                 }
 
             // листы контейнеров
