@@ -36,8 +36,8 @@
     $list = getValues($service, $sheet_ID, 'ожидают отправку');
 
     // берем значения полей из файла настроек виджета
-    if (file_exists('google_sheets/expect.json')) {
-        $files = file_get_contents('google_sheets/expect.json');
+    if (file_exists('expect.json')) {
+        $files = file_get_contents('expect.json');
         $files = json_decode($files, true);
 
         foreach ($files as $file) {
@@ -136,13 +136,15 @@
         usleep(20000);
     } catch (AmoCRMApiException $e) {}
 
-    if ($customFields->count() > 0) $fields_count = true;
+    if ($customFields && $customFields->count() > 0) $fields_count = true;
 
     while ($fields_count) {
-        foreach ($customFields as $customField) {
-            $class = explode('\\', get_class($customField));
-            $class = end($class);
-            $fields[] = [$customField->getId(), $class];
+        if ($customFields) {
+            foreach ($customFields as $customField) {
+                $class = explode('\\', get_class($customField));
+                $class = end($class);
+                $fields[] = [$customField->getId(), $class];
+            }
         }
 
         if ($customFields->getNextPageLink()) {
@@ -162,10 +164,12 @@
         usleep(20000);
     } catch (AmoCRMApiException $e) {}
 
-    foreach ($customFields as $customField) {
-        $class = explode('\\', get_class($customField));
-        $class = end($class);
-        $fields_contacts[] = [$customField->getId(), $class];
+    if ($customFields) {
+        foreach ($customFields as $customField) {
+            $class = explode('\\', get_class($customField));
+            $class = end($class);
+            $fields_contacts[] = [$customField->getId(), $class];
+        }
     }
 
     // перебираем полученные сделки и меняем в них значения полей
