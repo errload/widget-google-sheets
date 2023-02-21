@@ -19,13 +19,13 @@
         exit;
     }
 
-    $pipeline_ID = 6001285; // воронка Логистика (integratortechaccount)
-    $status_ID = 52185676; // статус Заполнение контейнера (integratortechaccount)
-    $user_ID = 8981790; // ID пользователя (integratortechaccount)
+//    $pipeline_ID = 6001285; // воронка Логистика (integratortechaccount)
+//    $status_ID = 52185676; // статус Заполнение контейнера (integratortechaccount)
+//    $user_ID = 8981790; // ID пользователя (integratortechaccount)
 
-//    $pipeline_ID = 606067; // воронка Логистика
-//    $status_ID = 14928961; // статус Заполнение контейнера
-//    $user_ID = 1177374; // ID пользователя
+    $pipeline_ID = 606067; // воронка Логистика
+    $status_ID = 14928961; // статус Заполнение контейнера
+    $user_ID = 1177374; // ID пользователя
 
     $IDs = []; // ID существующих сделок для запроса
     $lead_ID = null; // номер столбца с ID сделкой
@@ -86,12 +86,15 @@
     isPause();
     try {
         foreach ($list['values'] as $key => $value) {
+            if ((int) $value[$number_ID] !== 1) continue;
             $IDs[] = $value[$lead_ID];
         }
     } catch (Google_Service_Exception $exception) {
         $reason = $exception->getErrors();
         if ($reason) goToStep();
     }
+
+    if (!count($IDs)) goToStep();
 
     try {
         $leads_IDs = $apiClient->leads()->get((new LeadsFilter())->setIds($IDs));

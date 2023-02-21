@@ -2,13 +2,16 @@
     include_once 'config.php';
     ini_set('error_log', 'error_in_google_config.log');
 
-    $domain = 'integratortechaccount';
-//    $domain = 'projapan';
+//    $domain = 'integratortechaccount';
+    $domain = 'projapan';
 
     $Config = new Config();
-    $Config->GetSettings('integratortechaccount.amocrm.ru');
-//    $Config->GetSettings('projapan.amocrm.ru');
-    if (!$Config->CheckToken()) return;
+//    $Config->GetSettings('integratortechaccount.amocrm.ru');
+    $Config->GetSettings('projapan.amocrm.ru');
+    if (!$Config->CheckToken()) {
+        if (file_exists('start')) unlink('start');
+        return;
+    }
     $apiClient = $Config->getAMO_apiClient();
 
     $google_account_key = __DIR__ . '/service_key.json';

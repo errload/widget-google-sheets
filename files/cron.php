@@ -12,5 +12,6 @@ if (file_exists('google_sheets/error_log')) {
 }
 
 if (!file_exists('google_sheets/start')) {
-    exec('php ' . __DIR__ . '/google_sheets/save_selection.php ' . 'integratortechaccount.amocrm.ru' . ' &> /dev/null &');
+    exec('php ' . __DIR__ . '/google_sheets/save_selection.php ' . 'projapan.amocrm.ru' . ' &> /dev/null &');
+    //exec('php ' . __DIR__ . '/google_sheets/save_selection.php ' . 'integratortechaccount.amocrm.ru' . ' &> /dev/null &');
 }

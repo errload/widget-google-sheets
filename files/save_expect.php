@@ -20,6 +20,9 @@
         exit;
     }
 
+    $pipeline_ID = 606067; // воронка Логистика
+    $status_ID = 14928961; // статус Заполнение контейнера
+
     $IDs = []; // ID существующих сделок для запроса
     $expect_file = []; // поля с файла
     $expect_number_key = null; // номер столбца смены статуса и воронки
@@ -67,12 +70,15 @@
     isPause();
     try {
         foreach ($list['values'] as $key => $value) {
+            if ((int) $value[$expect_number_key] !== 1) continue;
             $IDs[] = $value[$expect_lead_key];
         }
     } catch (Google_Service_Exception $exception) {
         $reason = $exception->getErrors();
         if ($reason) goToStep();
     }
+
+    if (!count($IDs)) goToStep();
 
     isPause();
     try {
@@ -205,6 +211,10 @@
 
         // меняем бюджет
         $lead['бюджет'] ? $lead_info->setPrice($lead['бюджет']) : $lead_info->setPrice(0);
+
+        // меняем воронку и статус на ожидают отправку (в случае переноса с контейнера)
+        $lead_info->setPipelineId($pipeline_ID);
+        $lead_info->setStatusId($status_ID);
 
         // сохраняем сделку
         try {

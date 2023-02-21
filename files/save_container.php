@@ -14,8 +14,8 @@
 
     /* ###################################################################### */
 
-    $pipeline_ID = 6001285; // воронка Логистика (integratortechaccount)
-//    $pipeline_ID = 606067; // воронка Логистика
+//    $pipeline_ID = 6001285; // воронка Логистика (integratortechaccount)
+    $pipeline_ID = 606067; // воронка Логистика
 
     $container_file = []; // поля с файла
     $fields = []; // поля сделок
@@ -130,6 +130,8 @@
                 $status_ID = $status->getId();
             }
         }
+
+        if (!$status_ID) continue;
 
         // определяем номер столбца с цифрой изменения сделки и ID сделки
         isPause();
