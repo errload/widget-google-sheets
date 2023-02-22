@@ -233,6 +233,8 @@
                 usleep(20000);
             } catch (AmoCRMApiException $e) {}
 
+            if (!$contact) continue;
+
             // коллекция полей контакта
             $customFields = null;
             $customFields = $contact->getCustomFieldsValues();
