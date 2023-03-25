@@ -94,7 +94,9 @@
         try {
             $fields = $customFieldsService->get();
             usleep(20000);
-        } catch (AmoCRMApiException $e) {}
+        } catch (AmoCRMApiException $e) {
+	    deletePause();
+	}
 
         if ($fields->count() > 0) $fields_count = true;
 
@@ -108,7 +110,9 @@
                     $fields = $customFieldsService->nextPage($fields);
                     usleep(20000);
                     $fields_count = true;
-                } catch (AmoCRMApiException $e) {}
+                } catch (AmoCRMApiException $e) {
+		    deletePause();
+		}
             } else $fields_count = false;
         }
 
@@ -118,7 +122,9 @@
         try {
             $fields = $customFieldsService->get();
             usleep(20000);
-        } catch (AmoCRMApiException $e) {}
+        } catch (AmoCRMApiException $e) {
+	    deletePause();
+	}
 
         if ($fields->count() > 0) $fields_count = true;
 
@@ -132,7 +138,9 @@
                     $fields = $customFieldsService->nextPage($fields);
                     usleep(20000);
                     $fields_count = true;
-                } catch (AmoCRMApiException $e) {}
+                } catch (AmoCRMApiException $e) {
+		    deletePause();
+		}
             } else $fields_count = false;
         }
 
