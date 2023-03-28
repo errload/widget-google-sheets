@@ -95,8 +95,8 @@
             $fields = $customFieldsService->get();
             usleep(20000);
         } catch (AmoCRMApiException $e) {
-	    deletePause();
-	}
+            deletePause();
+        }
 
         if ($fields->count() > 0) $fields_count = true;
 
@@ -111,8 +111,8 @@
                     usleep(20000);
                     $fields_count = true;
                 } catch (AmoCRMApiException $e) {
-		    deletePause();
-		}
+                    deletePause();
+                }
             } else $fields_count = false;
         }
 
@@ -123,8 +123,8 @@
             $fields = $customFieldsService->get();
             usleep(20000);
         } catch (AmoCRMApiException $e) {
-	    deletePause();
-	}
+            deletePause();
+        }
 
         if ($fields->count() > 0) $fields_count = true;
 
@@ -139,8 +139,8 @@
                     usleep(20000);
                     $fields_count = true;
                 } catch (AmoCRMApiException $e) {
-		    deletePause();
-		}
+                    deletePause();
+                }
             } else $fields_count = false;
         }
 
