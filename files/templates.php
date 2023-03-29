@@ -41,7 +41,7 @@
 
     // удаление паузы
     function deletePause() {
-        while (file_exists('pause')) unlink('pause');
+        if (file_exists('pause')) unlink('pause');
     }
 
     $Config = new Config();

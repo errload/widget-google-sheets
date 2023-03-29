@@ -14,6 +14,11 @@
 
     /* ###################################################################### */
 
+    // остановка скрипта в случае ошибки
+    function deleteStart() {
+        if (file_exists('start')) unlink('start');
+    }
+
 //    $pipeline_ID = 6001285; // воронка Логистика (integratortechaccount)
     $pipeline_ID = 606067; // воронка Логистика
 
@@ -39,7 +44,9 @@
     try {
         $customFields = $customFieldsLeads->get();
         usleep(20000);
-    } catch (AmoCRMApiException $e) {}
+    } catch (AmoCRMApiException $e) {
+        deleteStart();
+    }
 
     if ($customFields) $fields_count = true;
 
@@ -57,7 +64,9 @@
                 $customFields = $customFieldsLeads->nextPage($customFields);
                 usleep(20000);
                 $fields_count = true;
-            } catch (AmoCRMApiException $e) {}
+            } catch (AmoCRMApiException $e) {
+                deleteStart();
+            }
         } else $fields_count = false;
     }
 
@@ -67,7 +76,9 @@
     try {
         $customFields = $customFieldsContacts->get();
         usleep(20000);
-    } catch (AmoCRMApiException $e) {}
+    } catch (AmoCRMApiException $e) {
+        deleteStart();
+    }
 
     if ($customFields) {
         foreach ($customFields as $customField) {
@@ -79,6 +90,8 @@
 
     // перебираем листы таблицы для поиска обновляемых контейнеров
     foreach ($response->getSheets() as $sheet) {
+        if (!file_exists('start')) continue;
+
         $IDs = []; // ID существующих сделок для запроса
         $container_number_key = null; // номер столбца смены статуса и воронки
         $container_lead_key = null; // номер столбца ID сделки
